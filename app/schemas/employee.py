@@ -7,8 +7,10 @@ class EmployeeImageCreate(BaseModel):
 
 
 class EmployeeCreate(BaseModel):
-    person_id: int
-    image_url: List[EmployeeImageCreate]
+    name: str
+    phone_number: str
+    position: str
+    images: List[EmployeeImageCreate]
 
 
 class EmployeeImageResponse(BaseModel):
@@ -16,13 +18,15 @@ class EmployeeImageResponse(BaseModel):
     image_url: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class EmployeeResponse(BaseModel):
     id: int
-    person_id: int
-    image_url: List[EmployeeImageResponse]
+    name: str
+    phone_number: str
+    position: str
+    images: List[EmployeeImageResponse]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
