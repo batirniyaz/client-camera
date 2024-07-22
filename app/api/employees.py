@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..crud.employee import create_employee, get_employees, store_employee_image
+from ..crud.employee import create_employee, get_employees, store_employee_image, del_employee
 from ..models import Employee
 from ..schemas.employee import EmployeeCreate, EmployeeResponse
 from ..database import get_db
@@ -36,9 +36,4 @@ def store_employee_image_endpoint(employee_id: int, file: UploadFile = File(...)
 
 @router.delete("/{employee_id}")
 def delete_employee(employee_id: int, db: Session = Depends(get_db)):
-    employee = db.query(Employee).filter(Employee.id == employee_id).first()
-    if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    db.delete(employee)
-    db.commit()
-    return {"message": "Employee deleted"}
+    return del_employee(db, employee_id)

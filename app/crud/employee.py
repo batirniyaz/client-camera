@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from ..models.employee import Employee
 from ..models.employee_image import EmployeeImage
@@ -25,10 +26,10 @@ def store_employee_image(db: Session, employee_id: int, image_url: str):
     return db_image
 
 
-# def delete_employee(db: Session, employee_id: int):
-#     employee = db.query(Employee).filter(Employee.id == employee_id).first()
-#     if not employee:
-#         return None
-#     db.delete(employee)
-#     db.commit()
-#     return employee
+def del_employee(db: Session, employee_id: int):
+    employee = db.query(Employee).filter(Employee.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    db.delete(employee)
+    db.commit()
+    return {"message": f"Employee {employee} deleted"}
