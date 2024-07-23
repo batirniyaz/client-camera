@@ -1,1 +1,1 @@
-from .employee import EmployeeCreate, EmployeeImageResponse, EmployeeResponse
+from .employee import EmployeeCreate, EmployeeImageResponse, EmployeeResponse, EmployeeImageCreate

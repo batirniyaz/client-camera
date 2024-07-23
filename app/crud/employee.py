@@ -7,7 +7,14 @@ from ..schemas.employee import EmployeeCreate
 
 
 def create_employee(db: Session, employee: EmployeeCreate):
-    db_employee = Employee(name=employee.name, phone_number=employee.phone_number, position=employee.position)
+    db_employee = Employee(
+        name=employee.name,
+        phone_number=employee.phone_number,
+        position_id=employee.position_id,
+        filial_id=employee.filial_id,
+        time_in=employee.time_in,
+        time_out=employee.time_out
+    )
     db.add(db_employee)
     db.commit()
     db.refresh(db_employee)
