@@ -3,7 +3,7 @@ from fastapi import UploadFile
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-IMAGE_DIR = BASE_DIR / "static" / "images"
+IMAGE_DIR = BASE_DIR / "storage" / "users"
 
 
 def save_upload_file(upload_file: UploadFile) -> str:

@@ -14,3 +14,4 @@ class Employee(Base):
     time_in = Column(String)
     time_out = Column(String)
     images = relationship("EmployeeImage", back_populates="employee")
+

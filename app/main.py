@@ -6,7 +6,11 @@ from .api import router
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Employee Management API",
+    description="A simple API to manage employees.",
+    version="0.1"
+)
 
 app.include_router(router)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/storage", StaticFiles(directory="storage"), name="storage")
