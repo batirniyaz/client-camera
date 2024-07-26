@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from ..models.employee import Employee
 from ..models.employee_image import EmployeeImage
-from ..schemas.employee import EmployeeCreate, EmployeeImageCreate, EmployeeImageResponse, EmployeeImageResponseModel
-
+from ..schemas.employee import EmployeeCreate, EmployeeUpdate
+from ..schemas.employee_image import EmployeeImageResponse, EmployeeImageResponseModel
 
 
 def create_employee(db: Session, employee: EmployeeCreate):
@@ -25,26 +25,26 @@ def create_employee(db: Session, employee: EmployeeCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def create_employee_image(db: Session, employee_image: EmployeeImageCreate):
-
-    try:
-        db_image = EmployeeImage(image_id=employee_image.employee_id, image_url=employee_image.image_url, employee_id=employee_image.employee_id)
-        db.add(db_image)
-        db.commit()
-        db.refresh(db_image)
-
-        response_data = EmployeeImageResponse(
-            employee_id=db_image.employee_id,
-            image_url=db_image.image_url
-        )
-
-        return EmployeeImageResponseModel(
-            status="success",
-            message="Image created successfully",
-            data=response_data
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# def create_employee_image(db: Session, employee_image: EmployeeImageCreate):
+#
+#     try:
+#         db_image = EmployeeImage(image_id=employee_image.employee_id, image_url=employee_image.image_url, employee_id=employee_image.employee_id)
+#         db.add(db_image)
+#         db.commit()
+#         db.refresh(db_image)
+#
+#         response_data = EmployeeImageResponse(
+#             employee_id=db_image.employee_id,
+#             image_url=db_image.image_url
+#         )
+#
+#         return EmployeeImageResponseModel(
+#             status="success",
+#             message="Image created successfully",
+#             data=response_data
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_employees(db: Session, skip: int = 0, limit: int = 10):
@@ -57,6 +57,7 @@ def get_employee(db: Session, employee_id: int):
         raise HTTPException(status_code=404, detail="Employee not found")
     return employee
 
+
 def store_employee_image(db: Session, employee_id: int, image_url: str):
     try:
         db_image = EmployeeImage(image_url=image_url, employee_id=employee_id)
@@ -66,6 +67,7 @@ def store_employee_image(db: Session, employee_id: int, image_url: str):
 
         response_data = EmployeeImageResponse(
             employee_id=db_image.employee_id,
+            image_id=db_image.image_id,
             image_url=db_image.image_url
         )
 
@@ -77,6 +79,7 @@ def store_employee_image(db: Session, employee_id: int, image_url: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 def delete_employee(db: Session, employee_id: int):
     employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not employee:
@@ -86,7 +89,7 @@ def delete_employee(db: Session, employee_id: int):
     return {"message": f"Employee {employee} deleted"}
 
 
-def update_employee(db: Session, employee_id: int, employee: EmployeeCreate):
+def update_employee(db: Session, employee_id: int, employee: EmployeeUpdate):
     db_employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not db_employee:
         raise HTTPException(status_code=404, detail="Employee not found")

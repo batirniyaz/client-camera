@@ -1,12 +1,13 @@
 import os.path
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..crud.employee import create_employee, get_employees, store_employee_image, delete_employee, create_employee_image, update_employee, get_employee
+from ..crud.employee import create_employee, get_employees, store_employee_image, delete_employee, update_employee, get_employee
 from ..models import Employee
-from ..schemas.employee import EmployeeCreate, EmployeeResponse, EmployeeImageCreate, EmployeeImageResponse
+from ..schemas.employee import EmployeeCreate, EmployeeResponse
+from ..schemas.employee_image import EmployeeImageCreate
 from ..database import get_db
 from ..utils.file_utils import save_upload_file
 
@@ -55,9 +56,9 @@ def get_employee_endpoint(employee_id: int, db: Session = Depends(get_db)):
     return get_employee(db, employee_id)
 
 
-@router.post("/images", response_model=EmployeeImageResponse)
-def create_employee_image_endpoint(employee_image: EmployeeImageCreate, db: Session = Depends(get_db)):
-    return create_employee_image(db, employee_image)
+# @router.post("/images", response_model=EmployeeImageResponse)
+# def create_employee_image_endpoint(employee_image: EmployeeImageCreate, db: Session = Depends(get_db)):
+#     return create_employee_image(db, employee_image)
 
 
 @router.post("/{employee_id}/images")

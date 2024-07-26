@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from ..database import Base
 
@@ -11,4 +11,3 @@ class EmployeeImage(Base):
     device_id = Column(Integer, default=0)
     employee = relationship("Employee", back_populates="images")
 
-    __table_args__ = (UniqueConstraint('employee_id', 'image_id', name='unique_image_employee'),)
