@@ -9,8 +9,6 @@ class Employee(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     phone_number = Column(String, index=True)
-    time_in = Column(String)
-    time_out = Column(String)
     images = relationship("EmployeeImage", back_populates="employee")
 
     position_id = Column(Integer, ForeignKey('positions.id'))
