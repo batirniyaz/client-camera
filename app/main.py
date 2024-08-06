@@ -14,3 +14,4 @@ app = FastAPI(
 
 app.include_router(router)
 app.mount("/storage", StaticFiles(directory="storage"), name="storage")
+
