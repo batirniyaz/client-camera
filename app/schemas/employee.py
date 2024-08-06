@@ -1,26 +1,40 @@
+import datetime
+
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from .employee_image import EmployeeImageResponse
 
 
-class EmployeeCreate(BaseModel):
+class EmployeeBase(BaseModel):
     name: str = Field(..., description="The name of the employee")
     phone_number: str = Field(..., description="The phone number of the employee")
+    time_in: Optional[str] = Field(..., description="The time the employee checks in")
+    time_out: Optional[str] = Field(..., description="The time the employee checks out")
     position_id: int = Field(..., description="The ID of the employee's position")
+    working_graphic_id: int = Field(..., description="The ID of the employee's working graphic")
     filial_id: int = Field(..., description="The ID of the filial")
-    time_in: str = Field(..., description="The time the employee checks in")
-    time_out: str = Field(..., description="The time the employee checks out")
 
 
-class EmployeeResponse(BaseModel):
+class EmployeeCreate(EmployeeBase):
+    pass
+
+
+class EmployeeUpdate(EmployeeBase):
+    name: Optional[str] = Field(None, description="The name of the employee")
+    phone_number: Optional[str] = Field(None, description="The phone number of the employee")
+    time_in: Optional[str] = Field(None, description="The time the employee checks in")
+    time_out: Optional[str] = Field(None, description="The time the employee checks out")
+    position_id: Optional[int] = Field(None, description="The ID of the employee's position")
+    working_graphic_id: Optional[int] = Field(None, description="The ID of the employee's working graphic")
+    filial_id: Optional[int] = Field(None, description="The ID of the filial")
+
+
+class EmployeeResponse(EmployeeBase):
     id: int = Field(..., description="The ID of the employee")
-    name: str = Field(..., description="The name of the employee")
-    phone_number: str = Field(..., description="The phone number of the employee")
-    position_id: int = Field(..., description="The ID of the position")
-    filial_id: int = Field(..., description="The ID of the filial")
-    time_in: str = Field(..., description="The time the employee checks in")
-    time_out: str = Field(..., description="The time the employee checks out")
     images: List[EmployeeImageResponse] = Field(..., description="A list of images associated with the employee")
+
+    created_at: datetime = Field(..., description="The time the employee was created")
+    updated_at: datetime = Field(..., description="The time the employee was updated")
 
     class Config:
         from_attributes = True
@@ -42,23 +56,3 @@ class EmployeeResponse(BaseModel):
             }
         }
 
-
-class EmployeeUpdate(BaseModel):
-    name: Optional[str]
-    phone_number: Optional[str]
-    position_id: Optional[int]
-    filial_id: Optional[int]
-    time_in: Optional[str]
-    time_out: Optional[str]
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "Batirniyaz",
-                "phone_number": "998905913873",
-                "position_id": 1,
-                "filial_id": 1,
-                "time_in": "09:00",
-                "time_out": "19:00"
-            }
-        }

@@ -1,16 +1,29 @@
+import datetime
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
-class EmployeeImageCreate(BaseModel):
-    employee_id: int
-    image_url: str
+class EmployeeImageBase(BaseModel):
+    image_url: str = Field(..., description="The URL of the image")
+    employee_id: int = Field(..., description="The ID of the employee")
+    device_id: Optional[int] = Field(0, description="The ID of the device")
 
 
-class EmployeeImageResponse(BaseModel):
-    employee_id: int = Field(..., description="The ID of associated employee")
+class EmployeeImageCreate(EmployeeImageBase):
+    pass
+
+
+class EmployeeImageUpdate(EmployeeImageBase):
+    pass
+
+
+
+class EmployeeImageResponse(EmployeeImageBase):
     image_id: int = Field(..., description="The ID of the image")
-    image_url: str = Field(..., description="The URL of employee image")
+
+    created_at: datetime = Field(..., description="The time the image was created")
+    updated_at: datetime = Field(..., description="The time the image was updated")
 
     class Config:
         from_attributes = True
@@ -18,24 +31,8 @@ class EmployeeImageResponse(BaseModel):
             "example": {
                 "employee_id": 1,
                 "image_id": 1,
-                "image_url": "http://example.com/image.jpg"
-            }
-        }
-
-
-class EmployeeImageResponseModel(BaseModel):
-    status: str = Field(..., description="The status of the response")
-    message: str = Field(..., description="The message of the response")
-    data: EmployeeImageResponse = Field(..., description="The data payload containing the employee information")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "status": "success",
-                "message": "Image created successfully",
-                "data": {
-                    "employee_id": 1,
-                    "image_url": "http://example.com/image.jpg"
-                }
+                "image_url": "http://example.com/image.jpg",
+                "created_at": "2021-08-01T12:00:00",
+                "updated_at": "2021-08-01T12:00:00"
             }
         }
