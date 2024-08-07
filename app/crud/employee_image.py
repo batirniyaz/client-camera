@@ -1,18 +1,27 @@
-from fastapi import HTTPException
+import os
+
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from ..models.employee_image import EmployeeImage
 from ..schemas.employee_image import EmployeeImageCreate, EmployeeImageUpdate
+from ..utils.file_utils import save_upload_file
 
 
-async def create_employee_image(db: AsyncSession, employee_image: EmployeeImageCreate):
+async def create_employee_image(db: AsyncSession, employee_id: int, file: UploadFile):
     try:
-        db_employee_image = EmployeeImage(**employee_image.model_dump())
+        main_image_url = f"/storage/users/"
+        if not os.path.exists(f"{main_image_url}{employee_id}"):
+            os.makedirs(f"{main_image_url}{employee_id}")
+
+        file_path = save_upload_file(file)
+        image_url = f"{main_image_url}{employee_id}/images/{file_path}"
+
+        db_employee_image = EmployeeImage(image_url=image_url, employee_id=employee_id)
         db.add(db_employee_image)
         await db.commit()
         await db.refresh(db_employee_image)
 
-        return db_employee_image
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

@@ -19,7 +19,6 @@ class EmployeeImageUpdate(EmployeeImageBase):
     pass
 
 
-
 class EmployeeImageResponse(EmployeeImageBase):
     image_id: int = Field(..., description="The ID of the image")
     image_url: str = Field(..., description="The URL of the image")
