@@ -5,7 +5,7 @@ from .employee import EmployeeResponse
 
 
 class PositionBase(BaseModel):
-    name: str
+    name: str = Field(..., description="The name of the position")
 
 
 class PositionCreate(PositionBase):
@@ -20,12 +20,12 @@ class PositionResponse(PositionBase):
     id: int = Field(..., description="The ID of the position")
     employees: List[EmployeeResponse] = Field([], description="The number of employees in the position")
 
-    created_at: datetime = Field(..., description="The date and time the position was created")
-    updated_at: datetime = Field(..., description="The date and time the position was updated")
+    created_at: datetime.datetime = Field(..., description="The date and time the position was created")
+    updated_at: datetime.datetime = Field(..., description="The date and time the position was updated")
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "name": "Position 1",
@@ -33,3 +33,4 @@ class PositionResponse(PositionBase):
                 "created_at": "2024-07-25 12:00:00"
             }
         }
+        arbitrary_types_allowed = True

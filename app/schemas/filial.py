@@ -6,8 +6,8 @@ import datetime
 
 
 class FilialBase(BaseModel):
-    name: str
-    address: str
+    name: str = Field(..., description="The name of the filial")
+    address: str = Field(..., description="The address of the filial")
 
 
 class FilialCreate(FilialBase):
@@ -23,12 +23,12 @@ class FilialResponse(FilialBase):
     id: int = Field(..., description="The ID of the filial")
     employees: List[EmployeeResponse] = Field([], description="The number of employees in the filial")
 
-    created_at: datetime = Field(..., description="The date and time the filial was created")
-    updated_at: datetime = Field(..., description="The date and time the filial was updated")
+    created_at: datetime.datetime = Field(..., description="The date and time the filial was created")
+    updated_at: datetime.datetime = Field(..., description="The date and time the filial was updated")
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "name": "Filial 1",
@@ -38,3 +38,4 @@ class FilialResponse(FilialBase):
                 "created_at": "2024-07-25 12:00:00"
             }
         }
+        arbitrary_types_allowed = True

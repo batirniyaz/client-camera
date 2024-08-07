@@ -27,14 +27,14 @@ class EmployeeUpdate(EmployeeBase):
 
 class EmployeeResponse(EmployeeBase):
     id: int = Field(..., description="The ID of the employee")
-    images: List[EmployeeImageResponse] = Field(..., description="A list of images associated with the employee")
+    images: List[EmployeeImageResponse] = Field([], description="A list of images associated with the employee")
 
-    created_at: datetime = Field(..., description="The time the employee was created")
-    updated_at: datetime = Field(..., description="The time the employee was updated")
+    created_at: datetime.datetime = Field(..., description="The time the employee was created")
+    updated_at: datetime.datetime = Field(..., description="The time the employee was updated")
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "name": "Batirniyaz",
@@ -49,4 +49,5 @@ class EmployeeResponse(EmployeeBase):
                 ]
             }
         }
+        arbitrary_types_allowed = True
 

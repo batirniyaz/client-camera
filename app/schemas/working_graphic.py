@@ -34,12 +34,12 @@ class WorkingGraphicResponse(WorkingGraphicBase):
     id: int
     employees: List[EmployeeResponse] = Field([], description="The number of employees in the working graphic")
 
-    created_at: datetime = Field(..., description="The date and time the working graphic was created")
-    updated_at: datetime = Field(..., description="The date and time the working graphic was updated")
+    created_at: datetime.datetime = Field(..., description="The date and time the working graphic was created")
+    updated_at: datetime.datetime = Field(..., description="The date and time the working graphic was updated")
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "name": "Working Graphic 1",
@@ -54,3 +54,4 @@ class WorkingGraphicResponse(WorkingGraphicBase):
                 "created_at": "2024-07-25 12:00:00"
             }
         }
+        arbitrary_types_allowed = True

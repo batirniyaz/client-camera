@@ -22,12 +22,12 @@ class EmployeeImageUpdate(EmployeeImageBase):
 class EmployeeImageResponse(EmployeeImageBase):
     image_id: int = Field(..., description="The ID of the image")
 
-    created_at: datetime = Field(..., description="The time the image was created")
-    updated_at: datetime = Field(..., description="The time the image was updated")
+    created_at: datetime.datetime = Field(..., description="The time the image was created")
+    updated_at: datetime.datetime = Field(..., description="The time the image was updated")
 
     class Config:
         from_attributes = True
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "employee_id": 1,
                 "image_id": 1,
@@ -36,3 +36,4 @@ class EmployeeImageResponse(EmployeeImageBase):
                 "updated_at": "2021-08-01T12:00:00"
             }
         }
+        arbitrary_types_allowed = True
