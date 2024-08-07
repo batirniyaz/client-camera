@@ -1,5 +1,6 @@
 import datetime
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
@@ -11,7 +12,7 @@ class EmployeeImageBase(BaseModel):
 
 
 class EmployeeImageCreate(EmployeeImageBase):
-    pass
+    file: UploadFile = File(..., description="The image file to upload")
 
 
 class EmployeeImageUpdate(EmployeeImageBase):
@@ -21,6 +22,7 @@ class EmployeeImageUpdate(EmployeeImageBase):
 
 class EmployeeImageResponse(EmployeeImageBase):
     image_id: int = Field(..., description="The ID of the image")
+    image_url: str = Field(..., description="The URL of the image")
 
     created_at: datetime.datetime = Field(..., description="The time the image was created")
     updated_at: datetime.datetime = Field(..., description="The time the image was updated")
