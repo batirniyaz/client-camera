@@ -2,7 +2,7 @@ import datetime
 
 from fastapi import UploadFile, File
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 
 
 class EmployeeImageBase(BaseModel):

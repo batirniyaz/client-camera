@@ -18,7 +18,7 @@ class PositionUpdate(PositionBase):
 
 class PositionResponse(PositionBase):
     id: int = Field(..., description="The ID of the position")
-    employees: List[EmployeeResponse] = Field([], description="The number of employees in the position")
+    employees: list[EmployeeResponse] = Field([], description="The number of employees in the position")
 
     created_at: datetime.datetime = Field(..., description="The date and time the position was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the position was updated")

@@ -7,12 +7,7 @@ from ..schemas.employee import EmployeeCreate, EmployeeUpdate
 
 async def create_employee(db: AsyncSession, employee: EmployeeCreate):
     try:
-        db_employee = Employee(
-            name=employee.name,
-            phone_number=employee.phone_number,
-            position_id=employee.position_id,
-            filial_id=employee.filial_id,
-        )
+        db_employee = Employee(**employee.model_dump())
         db.add(db_employee)
         await db.commit()
         await db.refresh(db_employee)

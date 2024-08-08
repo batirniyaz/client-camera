@@ -32,7 +32,7 @@ class WorkingGraphicUpdate(WorkingGraphicBase):
 
 class WorkingGraphicResponse(WorkingGraphicBase):
     id: int
-    employees: List[EmployeeResponse] = Field([], description="The number of employees in the working graphic")
+    employees: list[EmployeeResponse] = Field([], description="The number of employees in the working graphic")
 
     created_at: datetime.datetime = Field(..., description="The date and time the working graphic was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the working graphic was updated")

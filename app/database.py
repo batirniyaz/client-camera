@@ -5,11 +5,18 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = "postgresql+asyncpg://postgres:happynation@localhost:5432/db_employee"
 
-engine = create_async_engine(DATABASE_URL, echo=True)
-SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+engine = create_async_engine(DATABASE_URL, echo=False)
+SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, autocommit=False, autoflush=False)
 Base: DeclarativeMeta = declarative_base()
 
 
 async def get_db():
-    async with SessionLocal() as session:
-        yield session
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    db = SessionLocal()
+    try:
+        print("Creating session")
+        yield db
+    finally:
+        await db.close()
+        print("Closing session")

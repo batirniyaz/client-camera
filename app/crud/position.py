@@ -1,6 +1,8 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+
 from ..models.position import Position
 from ..schemas.position import PositionCreate, PositionUpdate
 
@@ -11,6 +13,11 @@ async def create_position(db: AsyncSession, position: PositionCreate):
         db.add(db_position)
         await db.commit()
         await db.refresh(db_position)
+
+        # result = await db.execute(
+        #     select(Position)
+        #     .options(joinedload(Position.employees))
+        #     .filter_by(id=db_position.id))
 
         return db_position
     except Exception as e:
