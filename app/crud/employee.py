@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,8 +35,13 @@ async def get_employee(db: AsyncSession, employee_id: int):
 
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
     db_employee = await get_employee(db, employee_id)
+
     for key, value in employee.model_dump(exclude_unset=True).items():
+        # if isinstance(value, datetime) and value.tzinfo is None:
+        #     value = value.replace(tzinfo=timezone.utc)
         setattr(db_employee, key, value)
+
+    # db_employee.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(db_employee)
     return db_employee

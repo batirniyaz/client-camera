@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional
 from .employee_image import EmployeeImageResponse
 
@@ -23,6 +23,7 @@ class EmployeeUpdate(EmployeeBase):
     position_id: Optional[int] = Field(None, description="The ID of the employee's position")
     working_graphic_id: Optional[int] = Field(None, description="The ID of the employee's working graphic")
     filial_id: Optional[int] = Field(None, description="The ID of the filial")
+    updated_at: Optional[datetime.datetime] = Field(None, description="The time the employee was updated")
 
 
 class EmployeeResponse(EmployeeBase):
@@ -34,6 +35,7 @@ class EmployeeResponse(EmployeeBase):
 
     class Config:
         from_attributes = True
+        validate_assignment = True
         json_schema_extra = {
             "example": {
                 "id": 1,
@@ -50,4 +52,12 @@ class EmployeeResponse(EmployeeBase):
             }
         }
         arbitrary_types_allowed = True
+
+        @model_validator
+        def number_validation(cls, values):
+            if values["updated_at"]:
+                values["updated_at"] = datetime.datetime.now()
+            else:
+                values["updated_at"] = values["created_at"]
+            return values
 

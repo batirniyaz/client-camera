@@ -1,5 +1,4 @@
 import datetime
-import importlib
 
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -33,5 +32,4 @@ class Employee(Base):
     filial: Mapped[list["Filial"]] = relationship(back_populates="employees", lazy="selectin")
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
-    updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"),
-                                                          onupdate=datetime.datetime.now(datetime.UTC))
+    updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), onupdate=datetime.datetime.now(datetime.UTC))

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 import datetime
 from .employee import EmployeeResponse
@@ -34,3 +34,12 @@ class PositionResponse(PositionBase):
             }
         }
         arbitrary_types_allowed = True
+        validate_assignment = True
+
+        @model_validator
+        def number_validator(cls, values):
+            dt = datetime.datetime.now()
+            if values["created_at"] is None:
+                values["created_at"] = dt
+            values["updated_at"] = dt
+            return values
