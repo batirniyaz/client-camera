@@ -36,10 +36,10 @@ class PositionResponse(PositionBase):
         arbitrary_types_allowed = True
         validate_assignment = True
 
-        @model_validator
-        def number_validator(cls, values):
-            dt = datetime.datetime.now()
-            if values["created_at"] is None:
-                values["created_at"] = dt
-            values["updated_at"] = dt
-            return values
+        # @model_validator
+        # def number_validator(cls, values):
+        #     dt = datetime.datetime.now()
+        #     if values["created_at"] is None:
+        #         values["created_at"] = dt
+        #     values["updated_at"] = dt
+        #     return values

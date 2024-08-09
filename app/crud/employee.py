@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models import Position, WorkingGraphic, Filial
 from ..models.employee import Employee
 from ..schemas.employee import EmployeeCreate, EmployeeUpdate
 
@@ -36,12 +38,27 @@ async def get_employee(db: AsyncSession, employee_id: int):
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
     db_employee = await get_employee(db, employee_id)
 
+    if employee.position_id is not None:
+        result = await db.execute(select(Position).filter_by(id=employee.position_id))
+        position = result.scalar_one_or_none()
+        if not position:
+            raise HTTPException(status_code=400, detail=f"Position with ID {employee.position_id} not found")
+
+    if employee.working_graphic_id is not None:
+        result = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
+        working_graphic = result.scalar_one_or_none()
+        if not working_graphic:
+            raise HTTPException(status_code=400, detail=f"Working graphic with ID {employee.working_graphic_id} not found")
+
+    if employee.filial_id is not None:
+        result = await db.execute(select(Filial).filter_by(id=employee.filial_id))
+        filial = result.scalar_one_or_none()
+        if not filial:
+            raise HTTPException(status_code=400, detail=f"Filial with ID {employee.filial_id} not found")
+
     for key, value in employee.model_dump(exclude_unset=True).items():
-        # if isinstance(value, datetime) and value.tzinfo is None:
-        #     value = value.replace(tzinfo=timezone.utc)
         setattr(db_employee, key, value)
 
-    # db_employee.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(db_employee)
     return db_employee

@@ -8,9 +8,9 @@ from ..database import get_db
 
 router = APIRouter()
 
+
 @router.post("/", response_model=EmployeeResponse)
 async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = Depends(get_db)):
-
     """
         Create a new employee with the given details.
 
@@ -25,7 +25,6 @@ async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = 
 
 @router.get("/", response_model=List[EmployeeResponse])
 async def get_employees_endpoint(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
-
     """
     Get a list of employees with the given details.
     :param skip:
@@ -39,7 +38,6 @@ async def get_employees_endpoint(skip: int = 0, limit: int = 10, db: AsyncSessio
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
-
     """
     Get an employee with the given ID.
     :param employee_id:
@@ -49,10 +47,8 @@ async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get
     return await get_employee(db, employee_id)
 
 
-
 @router.put("/{employee_id}", response_model=EmployeeResponse)
 async def update_employee_endpoint(employee_id: int, employee: EmployeeUpdate, db: AsyncSession = Depends(get_db)):
-
     """
     Update an employee with the given ID.
     :param employee_id:
@@ -61,9 +57,10 @@ async def update_employee_endpoint(employee_id: int, employee: EmployeeUpdate, d
     :return:
     """
     return await update_employee(db, employee_id, employee)
+
+
 @router.delete("/{employee_id}")
 async def delete_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
-
     """
     Delete an employee with the given ID.
     :param employee_id:
@@ -71,5 +68,3 @@ async def delete_employee_endpoint(employee_id: int, db: AsyncSession = Depends(
     :return:
     """
     return await delete_employee(db, employee_id)
-
-

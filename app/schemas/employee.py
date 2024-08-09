@@ -23,7 +23,9 @@ class EmployeeUpdate(EmployeeBase):
     position_id: Optional[int] = Field(None, description="The ID of the employee's position")
     working_graphic_id: Optional[int] = Field(None, description="The ID of the employee's working graphic")
     filial_id: Optional[int] = Field(None, description="The ID of the filial")
-    updated_at: Optional[datetime.datetime] = Field(None, description="The time the employee was updated")
+
+    class Config:
+        validate_assignment = True
 
 
 class EmployeeResponse(EmployeeBase):
@@ -52,12 +54,12 @@ class EmployeeResponse(EmployeeBase):
             }
         }
         arbitrary_types_allowed = True
+        validate_assignment = True
 
-        @model_validator
-        def number_validation(cls, values):
-            if values["updated_at"]:
-                values["updated_at"] = datetime.datetime.now()
-            else:
-                values["updated_at"] = values["created_at"]
-            return values
-
+        # @model_validator
+        # def number_validator(cls, values):
+        #     dt = datetime.datetime.now()
+        #     if values["created_at"] is None:
+        #         values["created_at"] = dt
+        #     values["updated_at"] = dt
+        #     return values
