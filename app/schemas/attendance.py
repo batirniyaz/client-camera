@@ -13,7 +13,7 @@ class AttendanceBase(BaseModel):
 
 
 class AttendanceCreate(AttendanceBase):
-    file: UploadFile = File(..., description="The image file to upload")
+    file: UploadFile = File(..., description="The attendance image to upload")
 
 
 class AttendanceUpdate(AttendanceBase):
@@ -36,7 +36,7 @@ class AttendanceResponse(AttendanceBase):
                 "id": 1,
                 "person_id": 1,
                 "camera_id": 1,
-                "time": "2021-08-01T12:00:00",
+                "time": "12:00:00",
                 "score": "0.98",
                 "file_path": "http://example.com/image.jpg",
                 "created_at": "2021-08-01T12:00:00",
@@ -45,5 +45,3 @@ class AttendanceResponse(AttendanceBase):
         }
         arbitrary_types_allowed = True
         validate_assignment = True
-
-
