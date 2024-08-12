@@ -2,7 +2,7 @@ import datetime
 
 from fastapi import UploadFile, File
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 
 class AttendanceBase(BaseModel):
@@ -45,3 +45,18 @@ class AttendanceResponse(AttendanceBase):
         }
         arbitrary_types_allowed = True
         validate_assignment = True
+
+
+class Image(BaseModel):
+    id: int
+    url: str
+
+
+class AttendanceData(BaseModel):
+    id: int
+    images: List[Image]
+
+
+class AttendanceDataResponse(BaseModel):
+    total: int
+    data: List[AttendanceData]
