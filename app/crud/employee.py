@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from sqlalchemy.future import select
