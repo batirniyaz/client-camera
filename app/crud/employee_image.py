@@ -11,10 +11,12 @@ from ..utils.file_utils import save_upload_file
 async def create_employee_image(db: AsyncSession, employee_id: int, file: UploadFile):
     try:
         main_image_url = f"/storage/users/"
-        if not os.path.exists(f"{main_image_url}{employee_id}"):
-            os.makedirs(f"{main_image_url}{employee_id}")
+        dir_path = f"{main_image_url}{employee_id}"
 
-        file_path = save_upload_file(file)
+        if not os.path.exists(dir_path):
+            os.makedirs(f"{dir_path}/images")
+
+        file_path = save_upload_file(file, employee_id)
         image_url = f"{main_image_url}{employee_id}/images/{file_path}"
 
         db_employee_image = EmployeeImage(image_url=image_url, employee_id=employee_id)
