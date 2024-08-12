@@ -1,9 +1,9 @@
 from fastapi import APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..crud.attendance import create_attendance
+from ..crud.attendance import create_attendance, get_attendances
 from ..database import get_db
-from ..schemas import AttendanceCreate, AttendanceResponse
+from ..schemas import AttendanceDataResponse, AttendanceResponse
 
 router = APIRouter()
 
@@ -30,3 +30,13 @@ async def create_attendance_endpoint(
     :return:
     """
     return await create_attendance(db, file, person_id, camera_id, time, score)
+
+
+@router.get("/", response_model=AttendanceDataResponse)
+async def get_attendances_endpoint(db: AsyncSession = Depends(get_db)):
+    """
+    Get a list of attendances with the given details.
+    :param db:
+    :return:
+    """
+    return await get_attendances(db)
