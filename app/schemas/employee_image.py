@@ -2,13 +2,11 @@ import datetime
 
 from fastapi import UploadFile, File
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class EmployeeImageBase(BaseModel):
     image_url: str = Field(..., description="The URL of the image")
     employee_id: int = Field(..., description="The ID of the employee")
-    device_id: Optional[int] = Field(0, description="The ID of the device")
 
 
 class EmployeeImageCreate(EmployeeImageBase):
