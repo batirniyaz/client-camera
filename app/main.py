@@ -3,8 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import engine, Base, SessionLocal
-from .api import router
+from app.database import engine, Base, SessionLocal
+from app.api import router
 
 
 @asynccontextmanager
