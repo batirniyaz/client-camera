@@ -2,7 +2,7 @@ import os
 from fastapi import UploadFile
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 IMAGE_DIR = BASE_DIR / "storage" / "users"
 
 
