@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine, Base, SessionLocal
 from .api import router
@@ -24,6 +25,19 @@ main_app = FastAPI(
     description="A simple API to manage employees.",
     version="0.1",
     lifespan=lifespan,
+)
+
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+main_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 main_app.include_router(router)
