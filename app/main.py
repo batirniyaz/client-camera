@@ -41,5 +41,5 @@ main_app.add_middleware(
 )
 
 main_app.include_router(router)
-main_app.mount("/storage", StaticFiles(directory="storage"), name="storage")
+main_app.mount("/storage", StaticFiles(directory="app/storage"), name="storage")
 
