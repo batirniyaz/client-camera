@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from ..models import Attendance, Employee
 from ..schemas.attendance import AttendanceDataResponse, AttendanceUpdate, AttendanceResponse, Image, AttendanceData
 from ..utils.file_utils import save_upload_file
+from ..database import BASE_URL
 
 
 async def create_attendance(db: AsyncSession, file: UploadFile, person_id: int, camera_id: int, time: str, score: str):
@@ -32,7 +33,10 @@ async def create_attendance(db: AsyncSession, file: UploadFile, person_id: int, 
         await db.commit()
         await db.refresh(db_attendance)
 
-        return AttendanceResponse.model_validate(db_attendance)
+        response = AttendanceResponse.model_validate(db_attendance)
+        response.file_path = f"{BASE_URL}{image_url}"
+
+        return response
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -44,7 +48,7 @@ async def get_attendances(db: AsyncSession):
 
     data = []
     for attendance in attendances:
-        images = [Image(id=image.image_id, url=image.image_url) for image in attendance.images]
+        images = [Image(id=image.image_id, url=f"{BASE_URL}{image.image_url}") for image in attendance.images]
         data.append(AttendanceData(id=attendance.id, images=images))
 
     return AttendanceDataResponse(total=len(data), data=data)

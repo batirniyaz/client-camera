@@ -7,6 +7,8 @@ from ..models.employee_image import EmployeeImage
 from ..schemas.employee_image import EmployeeImageCreate, EmployeeImageUpdate
 from ..utils.file_utils import save_upload_file
 
+from ..database import BASE_URL
+
 
 async def create_employee_image(db: AsyncSession, employee_id: int, file: UploadFile):
     try:
@@ -23,6 +25,9 @@ async def create_employee_image(db: AsyncSession, employee_id: int, file: Upload
         db.add(db_employee_image)
         await db.commit()
         await db.refresh(db_employee_image)
+
+        db_employee_image.image_url = f"{BASE_URL}{image_url}"
+
         return db_employee_image
 
     except Exception as e:
@@ -32,7 +37,12 @@ async def create_employee_image(db: AsyncSession, employee_id: int, file: Upload
 
 async def get_employees_images(db: AsyncSession, skip: int = 0, limit: int = 10):
     result = await db.execute(select(EmployeeImage).offset(skip).limit(limit))
-    return result.scalars().all()
+    employee_images = result.scalars().all()
+
+    for image in employee_images:
+        image.image_url = f"{BASE_URL}{image.image_url}"
+
+    return employee_images
 
 
 async def get_employee_images(db: AsyncSession, employee_id: int):
@@ -40,6 +50,10 @@ async def get_employee_images(db: AsyncSession, employee_id: int):
     employee_images = result.scalars().all()
     if not employee_images:
         raise HTTPException(status_code=404, detail="Employee images not found")
+
+    for image in employee_images:
+        image.image_url = f"{BASE_URL}{image.image_url}"
+
     return employee_images
 
 
@@ -48,6 +62,9 @@ async def get_employee_image(db: AsyncSession, employee_id: int, employee_image_
     employee_image = result.scalar_one_or_none()
     if not employee_image:
         raise HTTPException(status_code=404, detail="Employee image not found")
+
+
+
     return employee_image
 
 
