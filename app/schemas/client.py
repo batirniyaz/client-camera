@@ -8,6 +8,7 @@ class ClientBase(BaseModel):
     score: str = Field(..., description="The score of the client")
     age: int = Field(..., description="The age of the client")
     client_status: str = Field(..., description="The status of the client")
+    time: str = Field(..., description="The time of the client")
 
 
 class ClientCreate(ClientBase):
