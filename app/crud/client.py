@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -10,22 +11,21 @@ async def create_client(db: AsyncSession, client: ClientCreate):
     result = await db.execute(select(Client).filter_by(id=client.id))
     from_db_client = result.scalar_one_or_none()
 
-    db_client = Client(**client.model_dump())
-
     if from_db_client is not None:
-        db_client.client_status = "regular"
-        db_client.age = int((from_db_client.age + db_client.age) / 2)
-        db_client.score = from_db_client.score
+        from_db_client.client_status = "regular"
+        from_db_client.age = int((from_db_client.age + client.age) / 2)
+        from_db_client.time = client.time
+        db_client = from_db_client
     else:
+        db_client = Client(**client.model_dump())
         db_client.client_status = "new"
 
-    db.add(db_client)
     try:
+        db.add(db_client)
         await db.commit()
+        await db.refresh(db_client)
     except Exception as e:
         await db.rollback()
-        raise e
-
-    await db.refresh(db_client)
+        raise HTTPException(status_code=400, detail="Integrity error occurred") from e
 
     return ClientResponse.model_validate(db_client)
