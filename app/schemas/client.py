@@ -12,14 +12,14 @@ class ClientBase(BaseModel):
     client_status: str = Field(..., description="The status of the client")
     time: str = Field(..., description="The time of the client")
 
+    created_at: datetime.datetime = Field(..., description="The time the client was created")
+
 
 class ClientCreate(ClientBase):
     pass
 
 
 class ClientResponse(ClientBase):
-
-    created_at: datetime.datetime = Field(..., description="The time the client was created")
     updated_at: datetime.datetime = Field(..., description="The time the client was updated")
 
     class Config:
