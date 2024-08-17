@@ -6,12 +6,14 @@ from .employee_image import router as employee_image_router
 from .position import router as position_router
 from .working_graphic import router as working_graphic_router
 from .user import router as user_router
+from .client import router as client_router
 
 router = APIRouter()
+router.include_router(attendance_router, prefix="/attendance", tags=["Attendance"])
+router.include_router(client_router, prefix="/clients", tags=["Clients"])
 router.include_router(employees_router, prefix="/employees", tags=["Employees"])
 router.include_router(employee_image_router, prefix="/employee_images", tags=["Employee Images"])
 router.include_router(filial_router, prefix="/filials", tags=["Filials"])
 router.include_router(position_router, prefix="/positions", tags=["Positions"])
 router.include_router(working_graphic_router, prefix="/working_graphics", tags=["Working Graphics"])
-router.include_router(attendance_router, prefix="/attendance", tags=["Attendance"])
 router.include_router(user_router, prefix="/users", tags=["Users"])
