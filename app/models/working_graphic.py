@@ -9,6 +9,7 @@ from ..database import Base
 if TYPE_CHECKING:
     from .employee import Employee
 
+
 class Day(Base):
     __tablename__ = 'days'
 
@@ -18,7 +19,8 @@ class Day(Base):
     time_out: Mapped[datetime.time] = mapped_column()
     is_work_day: Mapped[bool] = mapped_column()
 
-    working_graphic_id: Mapped[int] = ForeignKey("working_graphics.id")
+    working_graphic_id: Mapped[int] = mapped_column(ForeignKey("working_graphics.id"))
+    working_graphic: Mapped["WorkingGraphic"] = relationship(back_populates="days", lazy="selectin")
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"),
