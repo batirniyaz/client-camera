@@ -37,3 +37,36 @@ class ClientResponse(ClientBase):
             }
         }
         arbitrary_types_allowed = True
+
+
+class DailyReportBase(BaseModel):
+    date: str = Field(..., description="The date of the report")
+    clients: list[int] = Field([], description="A list of clients")
+    gender: dict[str, int] = Field({}, description="A dictionary for gender distribution")
+    age: dict[int, int] = Field({}, description="A dictionary for age distribution")
+    total_new_clients: int = Field(..., description="The total number of new clients")
+    total_regular_clients: int = Field(..., description="The total number of regular clients")
+
+
+class DailyReportCreate(DailyReportBase):
+    pass
+
+
+class DailyReportResponse(DailyReportBase):
+    created_at: datetime.datetime = Field(..., description="The time the report was created")
+    updated_at: datetime.datetime = Field(..., description="The time the report was updated")
+
+    class Config:
+        from_attributes = True
+        validate_assignment = True
+        json_schema_extra = {
+            "example": {
+                "date": "2021-01-01",
+                "clients": [1, 2, 3],
+                "gender": {"male": 4, "female": 2},
+                "age": {20: 2, 25: 3, 30: 1},
+                "total_new_clients": 4,
+                "total_regular_clients": 2,
+            }
+        }
+        arbitrary_types_allowed = True
