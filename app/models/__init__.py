@@ -5,4 +5,4 @@ from .position import Position
 from .working_graphic import WorkingGraphic, Day
 from .attendance import Attendance
 from .user import User
-from .client import Client
+from .client import Client, DailyReport
