@@ -5,3 +5,4 @@ from .position import PositionBase, PositionCreate, PositionUpdate, PositionResp
 from .working_graphic import WorkingGraphicBase, WorkingGraphicCreate, WorkingGraphicUpdate, WorkingGraphicResponse, DayBase, DayCreate, DayUpdate, DayResponse
 from .attendance import AttendanceBase, AttendanceCreate, AttendanceUpdate, AttendanceResponse, AttendanceDataResponse
 from .user import UserBase, UserCreate, UserUpdate, UserResponse
+from .client import ClientBase, ClientCreate, ClientResponse
