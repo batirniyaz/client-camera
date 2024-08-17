@@ -1,38 +1,63 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 import datetime
+
+from ..models.working_graphic import Day
 from .employee import EmployeeResponse
+
+
+class DayBase(BaseModel):
+    day: str = Field(..., description="The day of the week")
+    time_in: str = Field(..., description="The time the employee starts working")
+    time_out: str = Field(..., description="The time the employee finishes working")
+    is_work_day: bool = Field(..., description="Whether the day is a work day")
+
+
+class DayCreate(DayBase):
+    pass
+
+
+class DayUpdate(DayBase):
+    pass
+
+
+class DayResponse(DayBase):
+    id: int
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "day": "Monday",
+                "time_in": "09:00",
+                "time_out": "19:00",
+                "is_work_day": True,
+                "created_at": "2024-07-25 12:00:00"
+            }
+        }
+        arbitrary_types_allowed = True
+        validate_assignment = True
 
 
 class WorkingGraphicBase(BaseModel):
     name: str = Field(..., description="The name of the working graphic")
-    monday: str = Field(..., description="The working hours on Monday")
-    tuesday: str = Field(..., description="The working hours on Tuesday")
-    wednesday: str = Field(..., description="The working hours on Wednesday")
-    thursday: str = Field(..., description="The working hours on Thursday")
-    friday: str = Field(..., description="The working hours on Friday")
-    saturday: str = Field(..., description="The working hours on Saturday")
-    sunday: str = Field(..., description="The working hours on Sunday")
 
 
 class WorkingGraphicCreate(WorkingGraphicBase):
-    pass
+    days: List[DayCreate] = Field([], description="The days of the week the employee works")
 
 
 class WorkingGraphicUpdate(WorkingGraphicBase):
-    name: Optional[str] = Field(None, description="The name of the working graphic")
-    monday: Optional[str] = Field(None, description="The working hours on Monday")
-    tuesday: Optional[str] = Field(None, description="The working hours on Tuesday")
-    wednesday: Optional[str] = Field(None, description="The working hours on Wednesday")
-    thursday: Optional[str] = Field(None, description="The working hours on Thursday")
-    friday: Optional[str] = Field(None, description="The working hours on Friday")
-    saturday: Optional[str] = Field(None, description="The working hours on Saturday")
-    sunday: Optional[str] = Field(None, description="The working hours on Sunday")
+    pass
 
 
 class WorkingGraphicResponse(WorkingGraphicBase):
     id: int
-    employees: list[EmployeeResponse] = Field([], description="The number of employees in the working graphic")
+    days: List[DayResponse] = Field([], description="The days of the week the employee works")
 
     created_at: datetime.datetime = Field(..., description="The date and time the working graphic was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the working graphic was updated")
@@ -42,15 +67,17 @@ class WorkingGraphicResponse(WorkingGraphicBase):
         json_schema_extra = {
             "example": {
                 "id": 1,
-                "name": "Working Graphic 1",
-                "monday": "09:00 - 19:00",
-                "tuesday": "09:00 - 19:00",
-                "wednesday": "09:00 - 19:00",
-                "thursday": "09:00 - 19:00",
-                "friday": "09:00 - 19:00",
-                "saturday": "09:00 - 19:00",
-                "sunday": "09:00 - 19:00",
-                "employees": 10,
+                "name": "Graphic 1",
+                "days": [
+                    {
+                        "id": 1,
+                        "day": "Monday",
+                        "time_in": "09:00",
+                        "time_out": "19:00",
+                        "is_work_day": True,
+                        "created_at": "2024-07-25 12:00:00"
+                    }
+                ],
                 "created_at": "2024-07-25 12:00:00"
             }
         }
