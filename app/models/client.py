@@ -15,6 +15,7 @@ class Client(Base):
     age: Mapped[int] = mapped_column()
     client_status: Mapped[str] = mapped_column()
     camera_id: Mapped[int] = mapped_column()
+    time: Mapped[str] = mapped_column()
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"),
