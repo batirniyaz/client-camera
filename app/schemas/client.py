@@ -33,3 +33,4 @@ class ClientResponse(ClientBase):
                 "client_status": "new",
             }
         }
+        arbitrary_types_allowed = True
