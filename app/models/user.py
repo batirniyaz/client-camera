@@ -1,7 +1,12 @@
 import datetime
 
+# from fastapi_users import FastAPIUsers, models, schemas
+# from fastapi_users.db import SQLAlchemyBaseUserTable, SQLAlchemyUserDatabase
+# from fastapi_users.authentication import BearerTransport, JWTStrategy, AuthenticationBackend
+
 from sqlalchemy import text
 from sqlalchemy.orm import Mapped, mapped_column
+
 from ..database import Base
 
 
@@ -16,3 +21,9 @@ class User(Base):
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), onupdate=text("TIMEZONE('utc', now())"))
+
+
+# class User(models.BaseUser, models.BaseOAuthAccountMixin):
+#     name: str
+#     email: str
+#     phone_number: str
