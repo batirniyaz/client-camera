@@ -1,8 +1,10 @@
+import datetime
+
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class ClientBase(BaseModel):
+    id: int = Field(..., description="The ID of the client")
     gender: str = Field(..., description="Gender of the client")
     camera_id: int = Field(..., description="The ID of the camera")
     score: str = Field(..., description="The score of the client")
@@ -16,10 +18,9 @@ class ClientCreate(ClientBase):
 
 
 class ClientResponse(ClientBase):
-    id: int = Field(..., description="The ID of the client")
 
-    created_at: str = Field(..., description="The time the client was created")
-    updated_at: str = Field(..., description="The time the client was updated")
+    created_at: datetime.datetime = Field(..., description="The time the client was created")
+    updated_at: datetime.datetime = Field(..., description="The time the client was updated")
 
     class Config:
         from_attributes = True
@@ -32,6 +33,7 @@ class ClientResponse(ClientBase):
                 "score": "0.8",
                 "age": 22,
                 "client_status": "new",
+                "time": "12:00:00",
             }
         }
         arbitrary_types_allowed = True
