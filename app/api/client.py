@@ -24,12 +24,13 @@ async def create_client_endpoint(background_tasks: BackgroundTasks, client: Clie
     created_client = await create_client(db, client, background_tasks)
     return created_client
 
-# @router.get("{date}")
-# async def get_daily_report(date: str, db: AsyncSession = Depends(get_db)):
-#     """
-#     Get the daily report for the given date.
-#     :param date:
-#     :param db:
-#     :return:
-#     """
-#     return await get_daily_report(db, date)
+
+@router.get("{date}")
+async def get_daily_report_endpoint(date: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get the daily report for the given date.
+    :param date:
+    :param db:
+    :return:
+    """
+    return await get_daily_report(db, date)
