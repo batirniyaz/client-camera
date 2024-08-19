@@ -7,6 +7,8 @@ from ..models import Position, WorkingGraphic, Filial
 from ..models.employee import Employee
 from ..schemas.employee import EmployeeCreate, EmployeeUpdate
 
+from app.database import BASE_URL
+
 
 async def create_employee(db: AsyncSession, employee: EmployeeCreate):
     try:
@@ -23,7 +25,13 @@ async def create_employee(db: AsyncSession, employee: EmployeeCreate):
 
 async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
     result = await db.execute(select(Employee).offset(skip).limit(limit))
-    return result.scalars().all()
+    employees = result.scalars().all()
+
+    for employee in employees:
+        for image in employee.images:
+            image.image_url = f"{BASE_URL}{image.image_url}"
+
+    return employees
 
 
 async def get_employee(db: AsyncSession, employee_id: int):
@@ -31,6 +39,10 @@ async def get_employee(db: AsyncSession, employee_id: int):
     employee = result.scalar_one_or_none()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    for image in employee.images:
+        image.image_url = f"{BASE_URL}{image.image_url}"
+
     return employee
 
 
