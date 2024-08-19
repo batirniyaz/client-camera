@@ -98,3 +98,11 @@ async def store_daily_report(db: AsyncSession, date: str, client):
         await db.rollback()
         logger.error(f"Error occurred while storing daily report: {e}")
         raise HTTPException(status_code=400, detail="Integrity error occurred on da") from e
+
+
+async def get_daily_report(db: AsyncSession, date: str):
+    result = await db.execute(select(DailyReport).filter_by(date=date))
+    daily_report = result.scalar_one_or_none()
+    if not daily_report:
+        raise HTTPException(status_code=404, detail="Daily report not found")
+    return DailyReportResponse.model_validate(daily_report)
