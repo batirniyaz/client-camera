@@ -52,41 +52,49 @@ async def create_client(db: AsyncSession, client: ClientCreate, background_tasks
 
 
 async def store_daily_report(db: AsyncSession, date: str, client):
-    result = await db.execute(select(DailyReport).filter_by(date=date))
-    daily_report = result.scalar_one_or_none()
-
-    if daily_report is None:
-        daily_report = DailyReport(
-            date=date,
-            clients=[client.id],
-            gender={client.gender: 1},
-            age={client.age: 1},
-            total_new_clients=1,
-            total_regular_clients=0
-        )
-    else:
-        daily_report.clients.append(client.id)
-
-        if client.gender in daily_report.gender:
-            daily_report.gender[client.gender] += 1
-        else:
-            daily_report.gender[client.gender] = 1
-
-        if client.age in daily_report.age:
-            daily_report.age[client.age] += 1
-        else:
-            daily_report.age[client.age] = 1
-
-        if client.client_status == "new":
-            daily_report.total_new_clients += 1
-        else:
-            daily_report.total_regular_clients += 1
-
     try:
+        result = await db.execute(select(DailyReport).filter_by(date=date))
+        daily_report = result.scalar_one_or_none()
+
+        if daily_report is None:
+            daily_report = DailyReport(
+                date=date,
+                clients=[client.id],
+                gender={client.gender: 1},
+                age={str(client.age): 1},
+                total_new_clients=1 if client.client_status == "new" else 0,
+                total_regular_clients=1 if client.client_status == "regular" else 0,
+            )
+        else:
+            print(f"Before update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+
+            daily_report.clients = list(set(daily_report.clients + [client.id]))
+
+            if daily_report.gender is None:
+                daily_report.gender = {}
+            daily_report.gender[client.gender] = daily_report.gender.get(client.gender, 0) + 1
+
+            if daily_report.age is None:
+                daily_report.age = {}
+            age_key = str(client.age)
+            daily_report.age[age_key] = daily_report.age.get(age_key, 0) + 1
+
+            if client.client_status == "new":
+                daily_report.total_new_clients += 1
+            else:
+                daily_report.total_regular_clients += 1
+
+            flag_modified(daily_report, "gender")
+            flag_modified(daily_report, "age")
+
+            print(f"After update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+
         db.add(daily_report)
         await db.commit()
         await db.refresh(daily_report)
-    except Exception as e:
+        print(f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+
+    except SQLAlchemyError as e:
         await db.rollback()
         logger.error(f"Error occurred while storing daily report: {e}")
         raise HTTPException(status_code=400, detail="Integrity error occurred on da") from e
