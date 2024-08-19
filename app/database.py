@@ -19,7 +19,7 @@ DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{D
 
 BASE_URL = os.getenv("BASE_URL")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(DATABASE_URL, echo=False, pool_size=20, max_overflow=10, pool_timeout=30, pool_recycle=1800)
 SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, autocommit=False, autoflush=False)
 Base: DeclarativeMeta = declarative_base()
 
