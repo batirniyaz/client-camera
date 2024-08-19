@@ -1,7 +1,9 @@
 from datetime import datetime
 
-from fastapi import HTTPException
+from fastapi import HTTPException, BackgroundTasks
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.future import select
 from ..models import Client, DailyReport
 from ..schemas import ClientResponse, ClientCreate, DailyReportResponse, DailyReportCreate
@@ -16,18 +18,20 @@ def make_naive(dt: datetime) -> datetime:
     return dt
 
 
-async def create_client(db: AsyncSession, client: ClientCreate):
+async def create_client(db: AsyncSession, client: ClientCreate, background_tasks: BackgroundTasks):
     result = await db.execute(select(Client).filter_by(id=client.id))
     from_db_client = result.scalar_one_or_none()
 
     created_at = make_naive(client.created_at)
     date = datetime.fromisoformat(str(created_at)).date().isoformat()
 
-    await store_daily_report(db, date=date, client=client)
+    background_tasks.add_task(store_daily_report, db, date, client)
+
+    # await store_daily_report(db, date=date, client=client)
 
     if from_db_client is not None:
         from_db_client.client_status = "regular"
-        from_db_client.age = int((from_db_client.age + client.age) / 2)
+        from_db_client.age = (from_db_client.age + client.age) // 2
         from_db_client.time = client.time
         db_client = from_db_client
     else:
