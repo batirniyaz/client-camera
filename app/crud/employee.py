@@ -109,10 +109,74 @@ async def get_employee(db: AsyncSession, employee_id: int):
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    for image in employee.images:
-        image.image_url = f"{BASE_URL}{image.image_url}"
+    position = await db.execute(select(Position).filter_by(id=employee.position_id))
+    position = position.scalar_one_or_none()
 
-    return employee
+    working_graphic = None
+    if employee.working_graphic_id:
+        working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
+        working_graphic = working_graphic.scalar_one_or_none()
+
+        if working_graphic:
+            days = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
+            days = days.scalars().all()
+
+            working_graphic = WorkingGraphicResponse(
+                id=working_graphic.id,
+                name=working_graphic.name,
+                days=[
+                    DayResponse(
+                        id=day.id,
+                        day=day.day,
+                        time_in=day.time_in,
+                        time_out=day.time_out,
+                        is_work_day=day.is_work_day,
+                        created_at=day.created_at,
+                        updated_at=day.updated_at,
+                    ) for day in days
+                ],
+                created_at=working_graphic.created_at,
+                updated_at=working_graphic.updated_at,
+            )
+
+    filial = await db.execute(select(Filial).filter_by(id=employee.filial_id))
+    filial = filial.scalar_one_or_none()
+
+    images = await db.execute(select(EmployeeImage).filter_by(employee_id=employee.id))
+    images = images.scalars().all()
+
+    formatted_employee = EmployeeResponse(
+        id=employee.id,
+        name=employee.name,
+        phone_number=employee.phone_number,
+        position_id=PositionResponse(
+            id=position.id,
+            name=position.name,
+            created_at=position.created_at,
+            updated_at=position.updated_at
+        ),
+        working_graphic=working_graphic,
+        filial_id=FilialResponse(
+            id=filial.id,
+            name=filial.name,
+            address=filial.address,
+            created_at=filial.created_at,
+            updated_at=filial.updated_at
+        ),
+        images=[
+            EmployeeImageResponse(
+                image_id=image.image_id,
+                employee_id=image.employee_id,
+                image_url=f"{BASE_URL}{image.image_url}",
+                created_at=image.created_at,
+                updated_at=image.updated_at,
+            ) for image in images
+        ],
+        created_at=employee.created_at,
+        updated_at=employee.updated_at
+    )
+
+    return formatted_employee
 
 
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
