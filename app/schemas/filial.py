@@ -1,6 +1,5 @@
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List
-from .employee import EmployeeResponse
+from pydantic import BaseModel, Field
+from typing import Optional
 
 import datetime
 
@@ -21,7 +20,6 @@ class FilialUpdate(FilialBase):
 
 class FilialResponse(FilialBase):
     id: int = Field(..., description="The ID of the filial")
-    employees: list[EmployeeResponse] = Field([], description="The number of employees in the filial")
 
     created_at: datetime.datetime = Field(..., description="The date and time the filial was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the filial was updated")
@@ -42,12 +40,5 @@ class FilialResponse(FilialBase):
         validate_assignment = True
 
 
-        # @model_validator
-        # def number_validator(cls, values):
-        #     dt = datetime.datetime.now()
-        #     if values["created_at"] is None:
-        #         values["created_at"] = dt
-        #     values["updated_at"] = dt
-        #     return values
 
 
