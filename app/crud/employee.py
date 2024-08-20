@@ -183,34 +183,56 @@ async def update_employee(db: AsyncSession, employee_id: int, employee: Employee
     db_employee = await get_employee(db, employee_id)
 
     if employee.position_id is not None:
-        result = await db.execute(select(Position).filter_by(id=employee.position_id))
-        position = result.scalar_one_or_none()
-        if not position:
-            raise HTTPException(status_code=400, detail=f"Position with ID {employee.position_id} not found")
+        db_employee.position_id = employee.position_id.id
 
     if employee.working_graphic_id is not None:
-        result = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
-        working_graphic = result.scalar_one_or_none()
-        if not working_graphic:
-            raise HTTPException(status_code=400,
-                                detail=f"Working graphic with ID {employee.working_graphic_id} not found")
+        db_employee.working_graphic_id = employee.working_graphic_id.id
 
     if employee.filial_id is not None:
-        result = await db.execute(select(Filial).filter_by(id=employee.filial_id))
-        filial = result.scalar_one_or_none()
-        if not filial:
-            raise HTTPException(status_code=400, detail=f"Filial with ID {employee.filial_id} not found")
+        db_employee.filial_id = employee.filial_id.id
 
     for key, value in employee.model_dump(exclude_unset=True).items():
         setattr(db_employee, key, value)
 
     await db.commit()
     await db.refresh(db_employee)
-    return db_employee
+
+    position = employee.position_id
+    working_graphic = employee.working_graphic_id
+    filial = employee.filial_id
+
+    images = await db.execute(select(EmployeeImage).filter_by(employee_id=db_employee.id))
+    images = images.scalars().all()
+
+    formatted_employee = EmployeeResponse(
+        id=db_employee.id,
+        name=db_employee.name,
+        phone_number=db_employee.phone_number,
+        position_id=position,
+        filial_id=filial,
+        working_graphic=working_graphic,
+        images=[
+            EmployeeImageResponse(
+                image_id=image.image_id,
+                employee_id=image.employee_id,
+                image_url=f"{BASE_URL}{image.image_url}",
+                created_at=image.created_at,
+                updated_at=image.updated_at,
+            ) for image in images
+        ],
+        created_at=db_employee.created_at,
+        updated_at=db_employee.updated_at
+    )
+
+    return formatted_employee
 
 
 async def delete_employee(db: AsyncSession, employee_id: int):
-    db_employee = await get_employee(db, employee_id)
+    result = await db.execute(select(Employee).filter_by(id=employee_id))
+    db_employee = result.scalar_one_or_none()
+    if not db_employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
     await db.delete(db_employee)
     await db.commit()
     return {"message": f"Employee {employee_id} deleted"}
