@@ -32,43 +32,75 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
 
     formatted_employees = []
     for employee in employees:
+        position = await db.execute(select(Position).filter_by(id=employee.position_id))
+        position = position.scalar_one_or_none()
+
+        working_graphic = None
+        if employee.working_graphic_id:
+            working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
+            working_graphic = working_graphic.scalar_one_or_none()
+
+            if working_graphic:
+                days = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
+                days = days.scalar_one_or_none()
+
+                working_graphic = WorkingGraphicResponse(
+                    id=working_graphic.id,
+                    name=working_graphic.name,
+                    days=[
+                        DayResponse(
+                            id=day.id,
+                            day=day.day,
+                            time_in=day.time_in,
+                            time_out=day.time_out,
+                            is_work_day=day.is_work_day,
+                            created_at=day.created_at,
+                            updated_at=day.updated_at,
+                        ) for day in days
+                    ],
+                    created_at=working_graphic.created_at,
+                    updated_at=working_graphic.updated_at,
+                )
+
+        filial = await db.execute(select(Filial).filter_by(id=employee.filial_id))
+        filial = filial.scalar_one_or_none()
+
+        images = await db.execute(select(EmployeeImage).filter_by(employee_id=employee.id))
+        images = images.scalars().all()
+
         formatted_employee = EmployeeResponse(
             id=employee.id,
             name=employee.name,
-            position=PositionResponse(
-                id=employee.position.id,
-                name=employee.position.name
-            ),
-            filial=FilialResponse(
-                id=employee.filial.id,
-                name=employee.filial.name
-            ),
             phone_number=employee.phone_number,
-            working_graphic=WorkingGraphicResponse(
-                id=employee.working_graphic.id,
-                name=employee.working_graphic.name,
-                days=[
-                    DayResponse(
-                        id=day.id,
-                        day=day.day,
-                        time_in=day.time_in,
-                        time_out=day.time_out,
-                        is_working=day.is_work_day
-                    ) for day in employee.working_graphic.days
-                ]
-            ) if employee.working_graphic else None,
+            position_id=PositionResponse(
+                id=position.id,
+                name=position.name,
+                created_at=position.created_at,
+                updated_at=position.updated_at
+            ),
+            working_graphic=working_graphic,
+            filial_id=FilialResponse(
+                id=filial.id,
+                name=filial.name,
+                address=filial.address,
+                created_at=filial.created_at,
+                updated_at=filial.updated_at
+            ),
             images=[
                 EmployeeImageResponse(
-                    id=image.image_id,
-                    url=f"{BASE_URL}{image.image_url}"
-                ) for image in employee.images
+                    image_id=image.image_id,
+                    employee_id=image.employee_id,
+                    image_url=f"{BASE_URL}{image.image_url}",
+                    created_at=image.created_at,
+                    updated_at=image.updated_at,
+                ) for image in images
             ],
             created_at=employee.created_at,
             updated_at=employee.updated_at
         )
         formatted_employees.append(formatted_employee)
 
-    return employees
+    return formatted_employees
 
 
 async def get_employee(db: AsyncSession, employee_id: int):
