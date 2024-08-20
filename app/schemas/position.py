@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional
 import datetime
-from .employee import EmployeeResponse
 
 
 class PositionBase(BaseModel):
@@ -18,7 +17,6 @@ class PositionUpdate(PositionBase):
 
 class PositionResponse(PositionBase):
     id: int = Field(..., description="The ID of the position")
-    employees: list[EmployeeResponse] = Field([], description="The number of employees in the position")
 
     created_at: datetime.datetime = Field(..., description="The date and time the position was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the position was updated")
@@ -36,10 +34,3 @@ class PositionResponse(PositionBase):
         arbitrary_types_allowed = True
         validate_assignment = True
 
-        # @model_validator
-        # def number_validator(cls, values):
-        #     dt = datetime.datetime.now()
-        #     if values["created_at"] is None:
-        #         values["created_at"] = dt
-        #     values["updated_at"] = dt
-        #     return values
