@@ -41,8 +41,8 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
             working_graphic = working_graphic.scalar_one_or_none()
 
             if working_graphic:
-                days = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
-                days = days.scalar_one_or_none()
+                days_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
+                days = days_result.scalars().all()
 
                 working_graphic = WorkingGraphicResponse(
                     id=working_graphic.id,
@@ -118,8 +118,8 @@ async def get_employee(db: AsyncSession, employee_id: int):
         working_graphic = working_graphic.scalar_one_or_none()
 
         if working_graphic:
-            days = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
-            days = days.scalars().all()
+            days_result = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
+            days = days_result.scalars().all()
 
             working_graphic = WorkingGraphicResponse(
                 id=working_graphic.id,
