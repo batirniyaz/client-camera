@@ -22,8 +22,8 @@ async def create_client(db: AsyncSession, client: ClientCreate, background_tasks
     result = await db.execute(select(Client).filter_by(id=client.id))
     from_db_client = result.scalar_one_or_none()
 
-    created_at = make_naive(client.created_at)
-    date = datetime.fromisoformat(str(created_at)).date().isoformat()
+    date = datetime.fromisoformat(str(client.time)).date().isoformat()
+    print(f"{date=}")
 
     background_tasks.add_task(store_daily_report, db, date, client)
 
@@ -37,7 +37,6 @@ async def create_client(db: AsyncSession, client: ClientCreate, background_tasks
     else:
         db_client = Client(**client.model_dump())
         db_client.client_status = "new"
-        db_client.created_at = created_at
 
     try:
         db.add(db_client)
