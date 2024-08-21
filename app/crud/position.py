@@ -85,7 +85,12 @@ async def get_position(db: AsyncSession, position_id: int):
 
 
 async def update_position(db: AsyncSession, position_id: int, position: PositionUpdate):
-    db_position = await get_position(db, position_id)
+    result = await db.execute(select(Position).filter_by(id=position_id))
+    db_position = result.scalar_one_or_none()
+
+    if not db_position:
+        raise HTTPException(status_code=404, detail="Position not found")
+
     for key, value in position.model_dump(exclude_unset=True).items():
         setattr(db_position, key, value)
     await db.commit()
@@ -94,7 +99,12 @@ async def update_position(db: AsyncSession, position_id: int, position: Position
 
 
 async def delete_position(db: AsyncSession, position_id: int):
-    db_position = await get_position(db, position_id)
+    result = await db.execute(select(Position).filter_by(id=position_id))
+    db_position = result.scalar_one_or_none()
+
+    if not db_position:
+        raise HTTPException(status_code=404, detail="Position not found")
+
     await db.delete(db_position)
     await db.commit()
     return {"message": f"Position {position_id} deleted"}
