@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from ..models import Employee
+from ..database import BASE_URL
+from ..models import Employee, Attendance
 from ..models.filial import Filial
 from ..schemas.filial import FilialCreate, FilialUpdate, FilialResponse
+from .client import make_naive
 
 
 async def create_filial(db: AsyncSession, filial: FilialCreate):
@@ -82,6 +86,46 @@ async def get_filial(db: AsyncSession, filial_id: int):
     )
 
     return formatted_filial
+
+
+async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: str):
+    result = await db.execute(select(Employee).filter_by(filial_id=filial_id))
+    employees = result.scalars().all()
+    if not employees:
+        raise HTTPException(status_code=404, detail="Employees not found")
+
+    formatted_filial_employees = []
+    for filial_employee in employees:
+        attendance_results = await db.execute(select(Attendance).filter_by(person_id=filial_employee.id))
+        attendances = attendance_results.scalars().all()
+        formatted_filial_employees.extend(attendances)
+
+    formatted_date_employees = []
+    for employee in formatted_filial_employees:
+        employee_created_at = make_naive(employee.created_at)
+        employee_date = datetime.fromisoformat(str(employee_created_at)).date().isoformat()
+        if employee_date == date:
+            formatted_date_employees.append(employee)
+
+    response_model = [
+        {
+            "success": True,
+            "total": len(formatted_date_employees),
+            "data": [
+                {
+                    "id": employee.id,
+                    "person_id": employee.person_id,
+                    "camera_id": employee.camera_id,
+                    "time": employee.time,
+                    "score": employee.score,
+                    "file_path": f"{BASE_URL}{employee.file_path}",
+                    "created_at": employee.created_at,
+                    "updated_at": employee.updated_at,
+                } for employee in formatted_date_employees
+            ]
+        }
+    ]
+    return response_model
 
 
 async def update_filial(db: AsyncSession, filial_id: int, filial: FilialUpdate):
