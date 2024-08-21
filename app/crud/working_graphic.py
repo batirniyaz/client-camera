@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -124,18 +125,33 @@ async def get_working_graphic(db: AsyncSession, working_graphic_id: int):
 
 
 async def update_working_graphic(db: AsyncSession, working_graphic_id: int, working_graphic: WorkingGraphicUpdate):
-    db_working_graphic = await get_working_graphic(db, working_graphic_id)
+    result = await db.execute(select(WorkingGraphic).filter_by(id=working_graphic_id))
+    db_working_graphic = result.scalar_one_or_none()
+
+    if not db_working_graphic:
+        raise HTTPException(status_code=404, detail="Working graphic not found")
+
     for key, value in working_graphic.model_dump(exclude_unset=True).items():
         setattr(db_working_graphic, key, value)
+
+    for day in db_working_graphic.days:
+        day.working_graphic_id = working_graphic_id
+
     await db.commit()
     await db.refresh(db_working_graphic)
     return db_working_graphic
 
 
 async def delete_working_graphic(db: AsyncSession, working_graphic_id: int):
-    db_working_graphic = await get_working_graphic(db, working_graphic_id)
+    result = await db.execute(select(WorkingGraphic).filter_by(id=working_graphic_id))
+    db_working_graphic = result.scalar_one_or_none()
+
     if not db_working_graphic:
-        raise Exception("Working graphic not found")
+        raise HTTPException(status_code=404, detail="Working graphic not found")
+
+    for day in db_working_graphic.days:
+        await db.delete(day)
+
     await db.delete(db_working_graphic)
     await db.commit()
     return {"message": f"Working graphic {working_graphic_id} deleted"}
