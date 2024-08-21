@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..crud.attendance import create_attendance, get_attendances
+from ..crud.attendance import create_attendance, get_attendances, get_commers
 from ..database import get_db
 from ..schemas import AttendanceDataResponse, AttendanceResponse
 
@@ -40,3 +40,15 @@ async def get_attendances_endpoint(db: AsyncSession = Depends(get_db)):
     :return:
     """
     return await get_attendances(db)
+
+
+@router.get("/commers/{filial_id}/{date}", response_model=[])
+async def get_commers_endpoint(date: str, filial_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Get the commers for the given date.
+    :param filial_id:
+    :param date:
+    :param db:
+    :return:
+    """
+    return await get_commers(db, date, filial_id)
