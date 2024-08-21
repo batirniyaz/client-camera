@@ -58,6 +58,7 @@ class WorkingGraphicUpdate(WorkingGraphicBase):
 class WorkingGraphicResponse(WorkingGraphicBase):
     id: int = Field(..., description="The ID of the working graphic")
     days: List[DayResponse] = Field([], description="The days in the working graphic")
+    employees: list[dict] = Field([], description="A list of employees with this working graphic")
 
     created_at: datetime = Field(..., description="The date and time the working graphic was created")
     updated_at: datetime = Field(..., description="The date and time the working graphic was updated")
