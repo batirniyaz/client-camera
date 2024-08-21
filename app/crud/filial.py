@@ -1,8 +1,10 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from ..models import Employee
 from ..models.filial import Filial
-from ..schemas.filial import FilialCreate, FilialUpdate
+from ..schemas.filial import FilialCreate, FilialUpdate, FilialResponse
 
 
 async def create_filial(db: AsyncSession, filial: FilialCreate):
@@ -19,7 +21,35 @@ async def create_filial(db: AsyncSession, filial: FilialCreate):
 
 async def get_filials(db: AsyncSession, skip: int = 0, limit: int = 10):
     result = await db.execute(select(Filial).offset(skip).limit(limit))
-    return result.scalars().all()
+    filials = result.scalars().all()
+
+    formatted_filials = []
+    for filial in filials:
+        employees_result = await db.execute(select(Employee).filter_by(filial_id=filial.id))
+        employees = employees_result.scalars().all()
+
+        formatted_filial = FilialResponse(
+            id=filial.id,
+            name=filial.name,
+            address=filial.address,
+            employees=[
+                {
+                    "id": employee.id,
+                    "name": employee.name,
+                    "phone_number": employee.phone_number,
+                    "position_id": employee.position_id,
+                    "working_graphic_id": employee.working_graphic_id,
+                    "filial_id": employee.filial_id,
+                    "created_at": employee.created_at,
+                    "updated_at": employee.updated_at,
+                } for employee in employees
+            ],
+            created_at=filial.created_at,
+            updated_at=filial.updated_at,
+        )
+        formatted_filials.append(formatted_filial)
+
+    return formatted_filials
 
 
 async def get_filial(db: AsyncSession, filial_id: int):
@@ -27,7 +57,31 @@ async def get_filial(db: AsyncSession, filial_id: int):
     filial = result.scalar_one_or_none()
     if not filial:
         raise HTTPException(status_code=404, detail="Filial not found")
-    return filial
+
+    employees_result = await db.execute(select(Employee).filter_by(filial_id=filial.id))
+    employees = employees_result.scalars().all()
+
+    formatted_filial = FilialResponse(
+        id=filial.id,
+        name=filial.name,
+        address=filial.address,
+        employees=[
+            {
+                "id": employee.id,
+                "name": employee.name,
+                "phone_number": employee.phone_number,
+                "position_id": employee.position_id,
+                "working_graphic_id": employee.working_graphic_id,
+                "filial_id": employee.filial_id,
+                "created_at": employee.created_at,
+                "updated_at": employee.updated_at,
+            } for employee in employees
+        ],
+        created_at=filial.created_at,
+        updated_at=filial.updated_at,
+    )
+
+    return formatted_filial
 
 
 async def update_filial(db: AsyncSession, filial_id: int, filial: FilialUpdate):
