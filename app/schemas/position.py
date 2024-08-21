@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Optional
 import datetime
 
-
 class PositionBase(BaseModel):
     name: str = Field(..., description="The name of the position")
 
@@ -17,6 +16,7 @@ class PositionUpdate(PositionBase):
 
 class PositionResponse(PositionBase):
     id: int = Field(..., description="The ID of the position")
+    employees: list[dict] = Field([], description="A list of employees with this position")
 
     created_at: datetime.datetime = Field(..., description="The date and time the position was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the position was updated")
