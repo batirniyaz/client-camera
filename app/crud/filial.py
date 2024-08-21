@@ -32,22 +32,24 @@ async def get_filials(db: AsyncSession, skip: int = 0, limit: int = 10):
         employees_result = await db.execute(select(Employee).filter_by(filial_id=filial.id))
         employees = employees_result.scalars().all()
 
+        formmated_employees = [
+            {
+                "id": employee.id,
+                "name": employee.name,
+                "phone_number": employee.phone_number,
+                "position_id": employee.position_id,
+                "working_graphic_id": employee.working_graphic_id,
+                "filial_id": employee.filial_id,
+                "created_at": employee.created_at,
+                "updated_at": employee.updated_at,
+            } for employee in employees
+        ]
+
         formatted_filial = FilialResponse(
             id=filial.id,
             name=filial.name,
             address=filial.address,
-            employees=[
-                {
-                    "id": employee.id,
-                    "name": employee.name,
-                    "phone_number": employee.phone_number,
-                    "position_id": employee.position_id,
-                    "working_graphic_id": employee.working_graphic_id,
-                    "filial_id": employee.filial_id,
-                    "created_at": employee.created_at,
-                    "updated_at": employee.updated_at,
-                } for employee in employees
-            ],
+            employees=formmated_employees,
             created_at=filial.created_at,
             updated_at=filial.updated_at,
         )
@@ -146,16 +148,27 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
 
 
 async def update_filial(db: AsyncSession, filial_id: int, filial: FilialUpdate):
-    db_filial = await get_filial(db, filial_id)
+    result = await db.execute(select(Filial).filter_by(id=filial_id))
+    db_filial = result.scalar_one_or_none()
+
+    if not db_filial:
+        raise HTTPException(status_code=404, detail="Filial not found")
+
     for key, value in filial.model_dump(exclude_unset=True).items():
         setattr(db_filial, key, value)
+
     await db.commit()
     await db.refresh(db_filial)
     return db_filial
 
 
 async def delete_filial(db: AsyncSession, filial_id: int):
-    db_filial = await get_filial(db, filial_id)
+    result = await db.execute(select(Filial).filter_by(id=filial_id))
+    db_filial = result.scalar_one_or_none()
+
+    if not db_filial:
+        raise HTTPException(status_code=404, detail="Filial not found")
+
     await db.delete(db_filial)
     await db.commit()
     return {"message": f"Filial {filial_id} deleted"}
