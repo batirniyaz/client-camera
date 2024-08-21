@@ -65,23 +65,27 @@ async def store_daily_report(db: AsyncSession, date: str, client):
                 total_regular_clients=1 if client.client_status == "regular" else 0,
             )
         else:
+            print(f"{client.client_status=}")
             print(f"Before update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+            print(f"{daily_report.clients=}")
 
-            daily_report.clients = list(set(daily_report.clients + [client.id]))
+            if client.id not in daily_report.clients:
+                if client.client_status == "new":
+                    daily_report.total_new_clients += 1
+                else:
+                    daily_report.total_regular_clients += 1
 
-            if daily_report.gender is None:
-                daily_report.gender = {}
-            daily_report.gender[client.gender] = daily_report.gender.get(client.gender, 0) + 1
+                daily_report.clients = list(set(daily_report.clients + [client.id]))
 
-            if daily_report.age is None:
-                daily_report.age = {}
-            age_key = str(client.age)
-            daily_report.age[age_key] = daily_report.age.get(age_key, 0) + 1
+                if daily_report.gender is None:
+                    daily_report.gender = {}
+                daily_report.gender[client.gender] = daily_report.gender.get(client.gender, 0) + 1
 
-            if client.client_status == "new":
-                daily_report.total_new_clients += 1
-            else:
-                daily_report.total_regular_clients += 1
+                if daily_report.age is None:
+                    daily_report.age = {}
+                age_key = str(client.age)
+                daily_report.age[age_key] = daily_report.age.get(age_key, 0) + 1
+
 
             flag_modified(daily_report, "gender")
             flag_modified(daily_report, "age")
