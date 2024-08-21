@@ -104,16 +104,16 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
     for employee in formatted_filial_employees:
         employee_created_at = make_naive(employee.created_at)
         employee_date = datetime.fromisoformat(str(employee_created_at)).date().isoformat()
-        if employee_date == date:
+        if date.startswith(employee_date[:7]) if len(date) == 7 else date == employee_date:
             formatted_date_employees.append(employee)
 
-    formatted_employees = []
+    formatted_employees = {}
     for employee in formatted_date_employees:
         result = await db.execute(select(Employee).filter_by(id=employee.person_id))
-        employee = result.scalar_one_or_none()
-        if not employee:
+        employee_data = result.scalar_one_or_none()
+        if not employee_data:
             raise HTTPException(status_code=404, detail="Employee not found")
-        formatted_employees.append(employee)
+        formatted_employees[employee.person_id] = employee_data
 
     position_result = await db.execute(select(Position))
     positions = position_result.scalars().all()
