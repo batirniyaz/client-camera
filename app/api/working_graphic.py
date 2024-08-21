@@ -15,7 +15,7 @@ async def create_day_endpoint(day: DayCreate, working_graphic_id: int, db: Async
     return await create_day(db, day, working_graphic_id)
 
 
-@router.post("/", response_model=WorkingGraphicResponse)
+@router.post("/", response_model=[])
 async def create_working_graphic_endpoint(working_graphic: WorkingGraphicCreate, db: AsyncSession = Depends(get_db)):
     return await create_working_graphic(db, working_graphic)
 
