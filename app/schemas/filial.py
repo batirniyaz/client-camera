@@ -20,6 +20,7 @@ class FilialUpdate(FilialBase):
 
 class FilialResponse(FilialBase):
     id: int = Field(..., description="The ID of the filial")
+    employees: list[dict] = Field([], description="A list of employees in the filial")
 
     created_at: datetime.datetime = Field(..., description="The date and time the filial was created")
     updated_at: datetime.datetime = Field(..., description="The date and time the filial was updated")
