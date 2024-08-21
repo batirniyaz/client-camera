@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from ..database import BASE_URL
-from ..models import Employee, Attendance
+from ..models import Employee, Attendance, Position
 from ..models.filial import Filial
 from ..schemas.filial import FilialCreate, FilialUpdate, FilialResponse
 from .client import make_naive
@@ -107,21 +107,38 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
         if employee_date == date:
             formatted_date_employees.append(employee)
 
+    formatted_employees = []
+    for employee in formatted_date_employees:
+        result = await db.execute(select(Employee).filter_by(id=employee.person_id))
+        employee = result.scalar_one_or_none()
+        if not employee:
+            raise HTTPException(status_code=404, detail="Employee not found")
+        formatted_employees.append(employee)
+
+    position_result = await db.execute(select(Position))
+    positions = position_result.scalars().all()
+
+    filial_result = await db.execute(select(Filial))
+    filials = filial_result.scalars().all()
+
     response_model = [
         {
             "success": True,
             "total": len(formatted_date_employees),
             "data": [
                 {
-                    "id": employee.id,
-                    "person_id": employee.person_id,
-                    "camera_id": employee.camera_id,
-                    "time": employee.time,
-                    "score": employee.score,
-                    "file_path": f"{BASE_URL}{employee.file_path}",
-                    "created_at": employee.created_at,
-                    "updated_at": employee.updated_at,
-                } for employee in formatted_date_employees
+                    "id": attendance.id,
+                    "employee": {"id": attendance.person_id, "name": formatted_employees[attendance.person_id].name},
+                    "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}",
+                    "position": {"id": formatted_employees[attendance.person_id].position_id, "name": positions[formatted_employees[attendance.person_id].position_id].name},
+                    "filial": {"id": formatted_employees[attendance.person_id].filial_id, "name": filials[formatted_employees[attendance.person_id].filial_id].name},
+                    "score": attendance.score,
+                    "time": attendance.time,
+                    "attendance_image": f"{BASE_URL}{attendance.file_path}",
+                    "camera_id": attendance.camera_id,
+                    "created_at": attendance.created_at,
+                    "updated_at": attendance.updated_at,
+                } for attendance in formatted_date_employees
             ]
         }
     ]
