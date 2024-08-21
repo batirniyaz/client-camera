@@ -60,7 +60,7 @@ async def get_filial_employees_by_date_endpoint(filial_id: int, date: str, db: A
     return await get_filial_employees_by_date(db, filial_id, date)
 
 
-@router.put("/{filial_id}", response_model=FilialResponse)
+@router.put("/{filial_id}", response_model=[])
 async def update_filial_endpoint(filial_id: int, filial: FilialUpdate, db: AsyncSession = Depends(get_db)):
 
     """
