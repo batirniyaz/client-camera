@@ -63,31 +63,28 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
 
     formatted_date_attendances = [
         attendance for attendance in attendances
-        if (len(date) == 7 and date.startswith(datetime.fromisoformat(attendance.time).date().isoformat()[:7]))
-           or (len(date) != 7 and date == datetime.fromisoformat(attendance.time).date().isoformat())
+        if (len(date) == 7 and date.startswith(parse_datetime(attendance.time).date().isoformat()[:7]))
+           or (len(date) != 7 and date == parse_datetime(attendance.time).date().isoformat())
     ]
+
+    first_attendances = {}
+    for attendance in formatted_date_attendances:
+        if attendance.person_id not in first_attendances:
+            first_attendances[attendance.person_id] = attendance
+        elif parse_datetime(first_attendances[attendance.person_id].time) > parse_datetime(attendance.time):
+            first_attendances[attendance.person_id] = attendance
 
     on_time_commers = []
     late_commers = []
     did_not_come = []
 
-    formatted_filial_dates = []
-    for attendance in formatted_date_attendances:
+    for person_id, attendance in first_attendances.items():
         result = await db.execute(select(Employee).filter_by(id=attendance.person_id))
         employee = result.scalar_one_or_none()
-        if not employee:
-            raise HTTPException(status_code=404, detail="Employee not found")
+        if not employee or employee.filial_id != filial_id:
+            continue
 
-        if employee.filial_id == filial_id:
-            formatted_filial_dates.append(attendance)
-
-    for attendance in formatted_filial_dates:
-        employee = await db.execute(select(Employee).filter_by(id=attendance.person_id))
-        employee = employee.scalar_one_or_none()
-        if not employee:
-            raise HTTPException(status_code=404, detail="Employee not found")
-
-        attendance_datetime = datetime.fromisoformat(attendance.time)
+        attendance_datetime = parse_datetime(attendance.time)
         time = attendance_datetime.time()
 
         working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
@@ -105,7 +102,8 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
         day_found = False
 
         for day in day:
-            if day.time_in <= attendance_time <= day.time_out:
+            if attendance_time <= day.time_in:
+                early_come_to_n_minute = (datetime.strptime(day.time_in, "%H:%M:%S") - datetime.strptime(attendance_time, "%H:%M:%S")).seconds // 60
                 on_time_commers.append(
                     {
                         "employee_id": employee.id,
@@ -114,7 +112,7 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
                         "employee_filial": employee.filial.name,
                         "employee_time_in": day.time_in,
                         "employee_time_out": day.time_out,
-                        "early_come_to_n_minute": (datetime.strptime(day.time_in, "%H:%M:%S") - datetime.strptime(attendance_time, "%H:%M:%S")).seconds // 60
+                        "early_come_to_n_minute": early_come_to_n_minute
                     }
                 )
                 day_found = True
@@ -133,15 +131,20 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
                 day_found = True
                 break
 
-        if not day_found:
+    all_employees = await db.execute(select(Employee).filter_by(filial_id=filial_id))
+    all_employees = all_employees.scalars().all()
+
+    attended_employees = {attendance.person_id for attendance in first_attendances.values()}
+    for employee in all_employees:
+        if employee.id not in attended_employees:
             did_not_come.append(
                 {
                     "employee_id": employee.id,
                     "employee_name": employee.name,
                     "employee_position": employee.position.name,
                     "employee_filial": employee.filial.name,
-                    "employee_time_in": day.time_in,
-                    "employee_time_out": day.time_out,
+                    "employee_time_in": employee.working_graphic.days[0].time_in,
+                    "employee_time_out": employee.working_graphic.days[0].time_out,
                     "employee_phone_number": employee.phone_number
                 }
             )
@@ -149,7 +152,7 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
     response_model = [
         {
             "success": True,
-            "total": len(formatted_filial_dates),
+            "total": len(on_time_commers) + len(late_commers) + len(did_not_come),
             "on_time_commers": {
                 "total": len(on_time_commers),
                 "data": on_time_commers
@@ -179,3 +182,10 @@ async def delete_attendance(db: AsyncSession, attendance_id: int):
     await db.commit()
 
     return {"success": True, "data": "Attendance deleted successfully"}
+
+
+def parse_datetime(datetime_str):
+    try:
+        return datetime.fromisoformat(datetime_str)
+    except ValueError:
+        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
