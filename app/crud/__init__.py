@@ -1,4 +1,4 @@
-from .employee import create_employee, get_employees, get_employee, update_employee, delete_employee
+from .employee import create_employee, get_employees, get_employee, update_employee, delete_employee, get_employee_deep
 from .filial import create_filial, get_filials, get_filial, update_filial, delete_filial, get_filial_employees_by_date
 from .position import create_position, get_positions, get_position, update_position, delete_position
 from .employee_image import create_employee_image, get_employees_images, get_employee_images, update_employee_image, delete_employee_image, get_employee_image
