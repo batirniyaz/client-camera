@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from ..crud.employee import create_employee, get_employees, delete_employee, update_employee, get_employee
+from ..crud.employee import create_employee, get_employees, delete_employee, update_employee, get_employee, get_employee_deep
 from ..schemas.employee import EmployeeCreate, EmployeeResponse, EmployeeUpdate
 from ..database import get_db
 
@@ -45,6 +45,18 @@ async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get
     :return:
     """
     return await get_employee(db, employee_id)
+
+
+@router.get("/deep/{employee_id}", response_model=[])
+async def get_employee_deep_endpoint(employee_id: int, date: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get an employee with the given ID.
+    :param date:
+    :param employee_id:
+    :param db:
+    :return:
+    """
+    return await get_employee_deep(db, employee_id, date)
 
 
 @router.put("/{employee_id}", response_model=EmployeeResponse)
