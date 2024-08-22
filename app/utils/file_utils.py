@@ -6,8 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IMAGE_DIR = BASE_DIR / "storage" / "users"
 
 
-def save_upload_file(upload_file: UploadFile, employee_id: int) -> str:
-    employee_dir = IMAGE_DIR / str(employee_id) / "images"
+def save_upload_file(upload_file: UploadFile, employee_id: int, img_type: str) -> str:
+    employee_dir = IMAGE_DIR / str(employee_id) / img_type
     employee_dir.mkdir(parents=True, exist_ok=True)
     file_location = employee_dir / upload_file.filename
     with open(file_location, "wb") as buffer:
