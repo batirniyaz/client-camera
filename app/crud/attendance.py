@@ -2,13 +2,12 @@ import os
 from datetime import datetime
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import func, DATE, and_, extract
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..models import Attendance, Employee, WorkingGraphic, Day
-from ..schemas.attendance import AttendanceDataResponse, AttendanceUpdate, AttendanceResponse, Image, AttendanceData
+from ..schemas.attendance import AttendanceDataResponse, AttendanceResponse, Image, AttendanceData
 from ..utils.file_utils import save_upload_file
 from ..database import BASE_URL
 
@@ -88,30 +87,64 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
         if not employee:
             raise HTTPException(status_code=404, detail="Employee not found")
 
-        time = datetime.fromisoformat(attendance.time).time()
+        attendance_datetime = datetime.fromisoformat(attendance.time)
+        time = attendance_datetime.time()
+
         working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
         working_graphic = working_graphic.scalar_one_or_none()
         if not working_graphic:
             raise HTTPException(status_code=404, detail="Working graphic not found")
 
-        attendance_datetime = datetime.fromisoformat(attendance.time)
-        weekday = attendance_datetime.weekday()
-
-        day_result = await db.execute(select(Day).filter(and_(Day.working_graphic_id == working_graphic.id,
-                                                              extract("dow", Day.day) == weekday)))
-        day = day_result.scalar_one_or_none()
+        day_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
+        day = day_result.scalars().all()
 
         if not day:
             raise HTTPException(status_code=404, detail="Day not found")
 
-        attendance_time = attendance_datetime.time().isoformat()
+        attendance_time = time.isoformat()
+        day_found = False
 
-        if day.time_in <= attendance_time <= day.time_out:
-            on_time_commers.append(attendance)
-        elif attendance_time > day.time_out:
-            late_commers.append(attendance)
-        else:
-            did_not_come.append(attendance)
+        for day in day:
+            if day.time_in <= attendance_time <= day.time_out:
+                on_time_commers.append(
+                    {
+                        "employee_id": employee.id,
+                        "employee_name": employee.name,
+                        "employee_position": employee.position.name,
+                        "employee_filial": employee.filial.name,
+                        "employee_time_in": day.time_in,
+                        "employee_time_out": day.time_out,
+                        "early_come_to_n_minute": (datetime.strptime(day.time_in, "%H:%M:%S") - datetime.strptime(attendance_time, "%H:%M:%S")).seconds // 60
+                    }
+                )
+                day_found = True
+                break
+            elif attendance_time > day.time_out:
+                late_commers.append(
+                    {
+                        "employee_id": employee.id,
+                        "employee_name": employee.name,
+                        "employee_position": employee.position.name,
+                        "attendance_time": attendance_time,
+                        "late_to_n_minute": (datetime.strptime(attendance_time, "%H:%M:%S") - datetime.strptime(day.time_in, "%H:%M:%S")).seconds // 60,
+                        "employee_time_in": day.time_in,
+                    }
+                )
+                day_found = True
+                break
+
+        if not day_found:
+            did_not_come.append(
+                {
+                    "employee_id": employee.id,
+                    "employee_name": employee.name,
+                    "employee_position": employee.position.name,
+                    "employee_filial": employee.filial.name,
+                    "employee_time_in": day.time_in,
+                    "employee_time_out": day.time_out,
+                    "employee_phone_number": employee.phone_number
+                }
+            )
 
     response_model = [
         {
@@ -132,4 +165,4 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
         }
     ]
 
-    return
+    return response_model
