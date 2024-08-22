@@ -9,7 +9,7 @@ from ..database import get_db
 router = APIRouter()
 
 
-@router.post("/", response_model=EmployeeResponse)
+@router.post("/", response_model=[])
 async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = Depends(get_db)):
     """
         Create a new employee with the given details.
