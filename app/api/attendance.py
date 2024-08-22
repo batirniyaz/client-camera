@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..crud.attendance import create_attendance, get_attendances, get_commers
+from ..crud.attendance import create_attendance, get_attendances, get_commers, delete_attendance
 from ..database import get_db
 from ..schemas import AttendanceDataResponse, AttendanceResponse
 
@@ -52,3 +52,17 @@ async def get_commers_endpoint(date: str, filial_id: int, db: AsyncSession = Dep
     :return:
     """
     return await get_commers(db, date, filial_id)
+
+
+@router.delete("/delete/{attendance_id}", response_model=[])
+async def delete_attendance_endpoint(attendance_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Delete an attendance with the given ID.
+    :param attendance_id:
+    :param db:
+    :return:
+    """
+    return await delete_attendance(db, attendance_id)
+
+
+
