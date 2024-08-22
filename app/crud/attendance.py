@@ -16,12 +16,13 @@ async def create_attendance(db: AsyncSession, file: UploadFile, person_id: int, 
     try:
         main_image_url = f"/storage/users/"
         dir_path = f"{main_image_url}{person_id}"
+        img_type = "attendances"
 
         if not os.path.exists(dir_path):
-            os.makedirs(f"{dir_path}/images")
+            os.makedirs(f"{dir_path}/{img_type}")
 
-        file_path = save_upload_file(file, employee_id=person_id)
-        image_url = f"{main_image_url}{person_id}/images/{file_path}"
+        file_path = save_upload_file(file, employee_id=person_id, img_type=img_type)
+        image_url = f"{main_image_url}{person_id}/{img_type}/{file_path}"
 
         db_attendance = Attendance(
             person_id=person_id,

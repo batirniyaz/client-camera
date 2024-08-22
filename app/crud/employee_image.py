@@ -14,12 +14,13 @@ async def create_employee_image(db: AsyncSession, employee_id: int, file: Upload
     try:
         main_image_url = f"/storage/users/"
         dir_path = f"{main_image_url}{employee_id}"
+        img_type = "images"
 
         if not os.path.exists(dir_path):
-            os.makedirs(f"{dir_path}/images")
+            os.makedirs(f"{dir_path}/{img_type}")
 
-        file_path = save_upload_file(file, employee_id)
-        image_url = f"{main_image_url}{employee_id}/images/{file_path}"
+        file_path = save_upload_file(file, employee_id, img_type)
+        image_url = f"{main_image_url}{employee_id}/{img_type}/{file_path}"
 
         db_employee_image = EmployeeImage(image_url=image_url, employee_id=employee_id)
         db.add(db_employee_image)
