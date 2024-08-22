@@ -166,3 +166,16 @@ async def get_commers(db: AsyncSession, date: str, filial_id: int):
     ]
 
     return response_model
+
+
+async def delete_attendance(db: AsyncSession, attendance_id: int):
+    result = await db.execute(select(Attendance).filter_by(id=attendance_id))
+    attendance = result.scalar_one_or_none()
+
+    if not attendance:
+        raise HTTPException(status_code=404, detail="Attendance not found")
+
+    await db.delete(attendance)
+    await db.commit()
+
+    return {"success": True, "data": "Attendance deleted successfully"}
