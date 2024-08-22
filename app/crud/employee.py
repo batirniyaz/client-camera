@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +8,7 @@ from ..schemas import DayResponse
 from ..schemas import WorkingGraphicResponse, EmployeeImageResponse
 from ..schemas.position import PositionResponse
 from ..schemas.filial import FilialResponse
-from ..models import Position, WorkingGraphic, Filial, Day, EmployeeImage
+from ..models import Position, WorkingGraphic, Filial, Day, EmployeeImage, Attendance
 from ..models.employee import Employee
 from ..schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeResponse
 
@@ -236,3 +238,68 @@ async def delete_employee(db: AsyncSession, employee_id: int):
     await db.delete(db_employee)
     await db.commit()
     return {"message": f"Employee {employee_id} deleted"}
+
+
+async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
+    result = await db.execute(select(Employee).filter_by(id=employee_id))
+    db_employee = result.scalar_one_or_none()
+    if not db_employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    attendance_result = await db.execute(select(Attendance).filter_by(person_id=employee_id))
+    db_attendances = attendance_result.scalars().all()
+    if not db_attendances:
+        raise HTTPException(status_code=404, detail="Attendances not found")
+
+    formatted_date_attendances = []
+    for db_attendance in db_attendances:
+        attendance_datetime = datetime.fromisoformat(db_attendance.time)
+        attendance_date = attendance_datetime.strftime("%Y-%m")
+        if attendance_date == date:
+            formatted_date_attendances.append(db_attendance)
+
+    # for formatted_date_attendance in formatted_date_attendances:
+    #     attendance_response = [
+    #         {
+    #             "id": attendance.id,
+    #             "time": attendance.time,
+    #             "is_late": attendance.is_late,
+    #             "created_at": attendance.created_at,
+    #             "updated_at": attendance.updated_at
+    #         } for attendance in formatted_date_attendances
+    #     ]
+
+    attendance_response = [
+
+    ]
+
+    response_model = [
+        {
+            "id": employee_id,
+            "name": db_employee.name,
+            "phone_number": db_employee.phone_number,
+            "position": db_employee.position.name,
+            "working_graphic": {
+                "id": f"{db_employee.working_graphic_id}",
+                "name": f"{db_employee.working_graphic.name}",
+                "days": {
+                    day.day: {
+                        "id": day.id,
+                        "day": day.day,
+                        "time_in": day.time_in,
+                        "time_out": day.time_out
+                    } for day in db_employee.working_graphic.days
+                } if db_employee.working_graphic else None
+            } if db_employee.working_graphic else None,
+            "filial": db_employee.filial.name,
+            "images": [
+                {
+                    "id": image.image_id,
+                    "url": f"{BASE_URL}{image.image_url}"
+                } for image in db_employee.images
+            ],
+            "attendances": attendance_response,
+        }
+    ]
+
+    return response_model
