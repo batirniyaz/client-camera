@@ -38,7 +38,18 @@ async def get_filials(db: AsyncSession, skip: int = 0, limit: int = 10):
                 "name": employee.name,
                 "phone_number": employee.phone_number,
                 "position": employee.position.name,
-                "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                "working_graphic": {
+                    "id": f"{employee.working_graphic_id}",
+                    "name": f"{employee.working_graphic.name}",
+                    "days": {
+                        day.day: {
+                            "id": day.id,
+                            "day": day.day,
+                            "time_in": day.time_in,
+                            "time_out": day.time_out
+                        } for day in employee.working_graphic.days
+                    } if employee.working_graphic else None
+                } if employee.working_graphic else None,
                 "filial": employee.filial.name,
                 "images": [
                     {
@@ -83,7 +94,18 @@ async def get_filial(db: AsyncSession, filial_id: int):
                 "name": employee.name,
                 "phone_number": employee.phone_number,
                 "position": employee.position.name,
-                "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                "working_graphic": {
+                    "id": f"{employee.working_graphic_id}",
+                    "name": f"{employee.working_graphic.name}",
+                    "days": {
+                        day.day: {
+                            "id": day.id,
+                            "day": day.day,
+                            "time_in": day.time_in,
+                            "time_out": day.time_out
+                        } for day in employee.working_graphic.days
+                    } if employee.working_graphic else None
+                } if employee.working_graphic else None,
                 "filial": employee.filial.name,
                 "images": [
                     {
@@ -144,8 +166,10 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
                     "id": attendance.id,
                     "employee": {"id": attendance.person_id, "name": formatted_employees[attendance.person_id].name},
                     "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}",
-                    "position": {"id": formatted_employees[attendance.person_id].position_id, "name": positions[formatted_employees[attendance.person_id].position_id].name},
-                    "filial": {"id": formatted_employees[attendance.person_id].filial_id, "name": filials[formatted_employees[attendance.person_id].filial_id].name},
+                    "position": {"id": formatted_employees[attendance.person_id].position_id,
+                                 "name": positions[formatted_employees[attendance.person_id].position_id].name},
+                    "filial": {"id": formatted_employees[attendance.person_id].filial_id,
+                               "name": filials[formatted_employees[attendance.person_id].filial_id].name},
                     "score": attendance.score,
                     "time": attendance.time,
                     "attendance_image": f"{BASE_URL}{attendance.file_path}",
