@@ -37,9 +37,15 @@ async def get_filials(db: AsyncSession, skip: int = 0, limit: int = 10):
                 "id": employee.id,
                 "name": employee.name,
                 "phone_number": employee.phone_number,
-                "position_id": employee.position_id,
-                "working_graphic_id": employee.working_graphic_id,
-                "filial_id": employee.filial_id,
+                "position": employee.position.name,
+                "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                "filial": employee.filial.name,
+                "images": [
+                    {
+                        "id": image.image_id,
+                        "url": f"{BASE_URL}{image.image_url}"
+                    } for image in employee.images
+                ],
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             } for employee in employees
@@ -76,9 +82,15 @@ async def get_filial(db: AsyncSession, filial_id: int):
                 "id": employee.id,
                 "name": employee.name,
                 "phone_number": employee.phone_number,
-                "position_id": employee.position_id,
-                "working_graphic_id": employee.working_graphic_id,
-                "filial_id": employee.filial_id,
+                "position": employee.position.name,
+                "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                "filial": employee.filial.name,
+                "images": [
+                    {
+                        "id": image.image_id,
+                        "url": f"{BASE_URL}{image.image_url}"
+                    } for image in employee.images
+                ],
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             } for employee in employees

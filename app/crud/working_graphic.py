@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..database import BASE_URL
 from ..models.working_graphic import WorkingGraphic, Day
 from ..schemas.working_graphic import WorkingGraphicCreate, WorkingGraphicUpdate, DayCreate, DayUpdate, \
     WorkingGraphicResponse, DayResponse
@@ -68,9 +69,15 @@ async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10)
                     "id": employee.id,
                     "name": employee.name,
                     "phone_number": employee.phone_number,
-                    "position_id": employee.position_id,
-                    "working_graphic_id": employee.working_graphic_id,
-                    "filial_id": employee.filial_id,
+                    "position": employee.position.name,
+                    "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                    "filial": employee.filial.name,
+                    "images": [
+                        {
+                            "id": image.image_id,
+                            "url": f"{BASE_URL}{image.image_url}"
+                        } for image in employee.images
+                    ],
                     "created_at": employee.created_at,
                     "updated_at": employee.updated_at,
                 } for employee in working_graphic.employees
@@ -86,8 +93,9 @@ async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10)
 async def get_working_graphic(db: AsyncSession, working_graphic_id: int):
     result = await db.execute(select(WorkingGraphic).filter_by(id=working_graphic_id))
     working_graphic = result.scalar_one_or_none()
+
     if not working_graphic:
-        raise Exception("Working graphic not found")
+        raise HTTPException(status_code=404, detail="Working graphic not found")
 
     days_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
     days = days_result.scalars().all()
@@ -111,9 +119,15 @@ async def get_working_graphic(db: AsyncSession, working_graphic_id: int):
                 "id": employee.id,
                 "name": employee.name,
                 "phone_number": employee.phone_number,
-                "position_id": employee.position_id,
-                "working_graphic_id": employee.working_graphic_id,
-                "filial_id": employee.filial_id,
+                "position": employee.position.name,
+                "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
+                "filial": employee.filial.name,
+                "images": [
+                    {
+                        "id": image.image_id,
+                        "url": f"{BASE_URL}{image.image_url}"
+                    } for image in employee.images
+                ],
                 "created_at": employee.created_at,
                 "updated_at": employee.updated_at,
             } for employee in working_graphic.employees
