@@ -93,7 +93,7 @@ async def get_filial(db: AsyncSession, filial_id: int):
                 "id": employee.id,
                 "name": employee.name,
                 "phone_number": employee.phone_number,
-                "position": employee.position.name,
+                "position": {"id": employee.position_id, "name": f"{employee.position.name}"},
                 "working_graphic": {
                     "id": f"{employee.working_graphic_id}",
                     "name": f"{employee.working_graphic.name}",
