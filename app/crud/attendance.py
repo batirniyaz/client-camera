@@ -118,7 +118,7 @@ async def get_commers_by_filial(db: AsyncSession, date: str, filial_id: int):
                 )
                 day_found = True
                 break
-            elif attendance_time > day.time_out:
+            elif attendance_time > day.time_in:
                 late_commers.append(
                     {
                         "employee_id": employee.id,
@@ -255,7 +255,7 @@ async def get_commers_filials(db: AsyncSession, date: str):
                     )
                     day_found = True
                     break
-                elif attendance_time > day.time_out:
+                elif attendance_time > day.time_in:
                     late_commers.append(
                         {
                             "employee_id": employee.id,
