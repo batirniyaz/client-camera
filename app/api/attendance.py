@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..crud.attendance import create_attendance, get_attendances, get_commers, delete_attendance
+from ..crud.attendance import create_attendance, get_attendances, get_commers_by_filial, get_commers_filials, delete_attendance
 from ..database import get_db
 from ..schemas import AttendanceDataResponse, AttendanceResponse
 
@@ -43,7 +43,7 @@ async def get_attendances_endpoint(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/commers/{filial_id}/{date}", response_model=[])
-async def get_commers_endpoint(date: str, filial_id: int, db: AsyncSession = Depends(get_db)):
+async def get_commers_by_filial_endpoint(date: str, filial_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get the commers for the given date.
     :param filial_id:
@@ -51,7 +51,18 @@ async def get_commers_endpoint(date: str, filial_id: int, db: AsyncSession = Dep
     :param db:
     :return:
     """
-    return await get_commers(db, date, filial_id)
+    return await get_commers_by_filial(db, date, filial_id)
+
+
+@router.get("/commers/{date}", response_model=[])
+async def get_commers_filials_endpoint(date: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get the commers for the given date.
+    :param date:
+    :param db:
+    :return:
+    """
+    return await get_commers_filials(db, date)
 
 
 @router.delete("/delete/{attendance_id}", response_model=[])
