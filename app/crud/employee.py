@@ -5,6 +5,7 @@ from sqlalchemy import delete
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .attendance import parse_datetime
 from ..schemas import DayResponse
 from ..schemas import WorkingGraphicResponse, EmployeeImageResponse
 from ..schemas.position import PositionResponse
@@ -227,10 +228,12 @@ async def update_employee(db: AsyncSession, employee_id: int, employee: Employee
 
     return formatted_employee
 
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def make_naive(dt):
     if dt.tzinfo is not None:
@@ -247,7 +250,7 @@ async def delete_employee(db: AsyncSession, employee_id: int):
             logger.error(f"Employee {employee_id} not found")
             raise HTTPException(status_code=404, detail="Employee not found")
 
-        await db.execute(delete(EmployeeImage).where(EmployeeImage.employee_id==employee_id))
+        await db.execute(delete(EmployeeImage).where(EmployeeImage.employee_id == employee_id))
 
         db_employee.updated_at = make_naive(datetime.now(timezone.utc))
 
@@ -274,24 +277,46 @@ async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
 
     formatted_date_attendances = []
     for db_attendance in db_attendances:
-        attendance_datetime = datetime.fromisoformat(db_attendance.time)
+        attendance_datetime = datetime.strptime(db_attendance.time, "%Y-%m-%d %H:%M:%S")
         attendance_date = attendance_datetime.strftime("%Y-%m")
         if attendance_date == date:
             formatted_date_attendances.append(db_attendance)
 
-    # for formatted_date_attendance in formatted_date_attendances:
-    #     attendance_response = [
-    #         {
-    #             "id": attendance.id,
-    #             "time": attendance.time,
-    #             "is_late": attendance.is_late,
-    #             "created_at": attendance.created_at,
-    #             "updated_at": attendance.updated_at
-    #         } for attendance in formatted_date_attendances
-    #     ]
+    first_attendances = {}
+    for attendance in formatted_date_attendances:
+        if attendance.person_id not in first_attendances:
+            first_attendances[attendance.person_id] = attendance
+        elif parse_datetime(first_attendances[attendance.person_id].time) > parse_datetime(attendance.time):
+            first_attendances[attendance.person_id] = attendance
+
+    last_attendances = {}
+    for attendance in formatted_date_attendances:
+        if attendance.person_id not in last_attendances:
+            last_attendances[attendance.person_id] = attendance
+        elif parse_datetime(last_attendances[attendance.person_id].time) < parse_datetime(attendance.time):
+            last_attendances[attendance.person_id] = attendance
+
+    date_obj = datetime.strptime(date, "%Y-%m").date()
 
     attendance_response = [
-
+        {
+            "date": datetime.strptime(first_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").date().isoformat(),
+            "attend_time": datetime.strptime(first_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
+            "attend_image": first_attendances[attendance.person_id].file_path,
+            "late_n_minute": ((parse_datetime(first_attendances[attendance.person_id].time) - datetime.combine(
+                date_obj, datetime.strptime(db_employee.working_graphic.days[0].time_in, "%H:%M:%S").time())).total_seconds() // 60) if ((parse_datetime(
+                first_attendances[employee_id].time) - datetime.combine(date_obj,
+                                                                       datetime.strptime(db_employee.working_graphic.days[
+                                                                            0].time_in, "%H:%M:%S").time())).total_seconds() // 60) > 0 else None,
+            "early_leave_n_minute": ((datetime.combine(date_obj, datetime.strptime(db_employee.working_graphic.days[
+                0].time_out, "%H:%M:%S").time()) - parse_datetime(
+                last_attendances[attendance.person_id].time)).total_seconds() // 60) if ((datetime.combine(date_obj,
+                                                                                                  datetime.strptime(db_employee.working_graphic.days[
+                                                                                                      0].time_out, "%H:%M:%S").time()) - parse_datetime(
+                last_attendances[attendance.person_id].time)).total_seconds() // 60) > 0 else None,
+            "leave_time": datetime.strptime(last_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
+            "leave_image": last_attendances[attendance.person_id].file_path,
+        } for attendance in formatted_date_attendances
     ]
 
     response_model = [
