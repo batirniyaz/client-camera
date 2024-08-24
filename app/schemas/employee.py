@@ -24,9 +24,9 @@ class EmployeeCreate(EmployeeBase):
 class EmployeeUpdate(EmployeeBase):
     name: Optional[str] = Field(None, description="The name of the employee")
     phone_number: Optional[str] = Field(None, description="The phone number of the employee")
-    position_id: Optional[PositionResponse] = Field(None, description="The ID of the employee's position")
-    working_graphic_id: Optional[WorkingGraphicResponse] = Field(None, description="The ID of the employee's working graphic")
-    filial_id: Optional[FilialResponse] = Field(None, description="The ID of the filial")
+    position_id: Optional[int] = Field(None, description="The ID of the employee's position")
+    working_graphic_id: Optional[int] = Field(None, description="The ID of the employee's working graphic")
+    filial_id: Optional[int] = Field(None, description="The ID of the filial")
 
     class Config:
         validate_assignment = True
