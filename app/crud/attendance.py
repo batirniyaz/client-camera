@@ -103,8 +103,12 @@ async def get_commers_by_filial(db: AsyncSession, date: str, filial_id: int):
         day_found = False
 
         for day in day:
-            if attendance_time <= day.time_in:
-                early_come_to_n_minute = (datetime.strptime(day.time_in, "%H:%M:%S") - datetime.strptime(attendance_time, "%H:%M:%S")).seconds // 60
+            if isinstance(day.time_in, str):
+                day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+
+            if attendance_time <= day.time_in.isoformat():
+                early_come_to_n_minute = (datetime.combine(date_obj,
+                                                           day.time_in) - attendance_datetime).total_seconds() // 60
                 on_time_commers.append(
                     {
                         "employee_id": employee.id,
@@ -118,19 +122,21 @@ async def get_commers_by_filial(db: AsyncSession, date: str, filial_id: int):
                 )
                 day_found = True
                 break
-            elif attendance_time > day.time_in:
+            elif attendance_time > day.time_in.isoformat():
                 late_commers.append(
                     {
                         "employee_id": employee.id,
                         "employee_name": employee.name,
                         "employee_position": employee.position.name,
                         "attendance_time": attendance_time,
-                        "late_to_n_minute": (datetime.strptime(attendance_time, "%H:%M:%S") - datetime.strptime(day.time_in, "%H:%M:%S")).seconds // 60,
+                        "late_to_n_minute": (attendance_datetime - datetime.combine(date_obj,
+                                                                                    day.time_in)).total_seconds() // 60,
                         "employee_time_in": day.time_in,
                     }
                 )
-                day_found = True
-                break
+
+    unique_late_commers = {f"{commer['employee_id']}_{commer['attendance_time']}": commer for commer in late_commers}
+    late_commers = list(unique_late_commers.values())
 
     all_employees = await db.execute(select(Employee).filter_by(filial_id=filial_id))
     all_employees = all_employees.scalars().all()
@@ -239,9 +245,11 @@ async def get_commers_filials(db: AsyncSession, date: str):
             day_found = False
 
             for day in day:
-                if attendance_time <= day.time_in:
-                    early_come_to_n_minute = (datetime.strptime(day.time_in, "%H:%M:%S") - datetime.strptime(
-                        attendance_time, "%H:%M:%S")).seconds // 60
+                if isinstance(day.time_in, str):
+                    day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+
+                if attendance_time <= day.time_in.isoformat():
+                    early_come_to_n_minute = (datetime.combine(date_obj, day.time_in) - attendance_datetime).total_seconds() // 60
                     on_time_commers.append(
                         {
                             "employee_id": employee.id,
@@ -255,15 +263,15 @@ async def get_commers_filials(db: AsyncSession, date: str):
                     )
                     day_found = True
                     break
-                elif attendance_time > day.time_in:
+                elif attendance_time > day.time_in.isoformat():
+                    late_to_n_minute = (attendance_datetime - datetime.combine(date_obj, day.time_in)).total_seconds() // 60
                     late_commers.append(
                         {
                             "employee_id": employee.id,
                             "employee_name": employee.name,
                             "employee_position": employee.position.name,
                             "attendance_time": attendance_time,
-                            "late_to_n_minute": (datetime.strptime(attendance_time, "%H:%M:%S") - datetime.strptime(
-                                day.time_in, "%H:%M:%S")).seconds // 60,
+                            "late_to_n_minute": late_to_n_minute,
                             "employee_time_in": day.time_in,
                         }
                     )
