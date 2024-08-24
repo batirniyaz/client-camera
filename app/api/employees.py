@@ -59,7 +59,7 @@ async def get_employee_deep_endpoint(employee_id: int, date: str, db: AsyncSessi
     return await get_employee_deep(db, employee_id, date)
 
 
-@router.put("/{employee_id}", response_model=EmployeeResponse)
+@router.put("/{employee_id}", response_model=[])
 async def update_employee_endpoint(employee_id: int, employee: EmployeeUpdate, db: AsyncSession = Depends(get_db)):
     """
     Update an employee with the given ID.
