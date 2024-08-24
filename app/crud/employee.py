@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
+from sqlalchemy import delete
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -182,62 +183,82 @@ async def get_employee(db: AsyncSession, employee_id: int):
 
 
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
-    db_employee = await get_employee(db, employee_id)
+    result = await db.execute(select(Employee).filter_by(id=employee_id))
+    db_employee = result.scalar_one_or_none()
 
     if employee.position_id is not None:
-        db_employee.position_id = employee.position_id.id
+        db_employee.position_id = employee.position_id
 
     if employee.working_graphic_id is not None:
-        db_employee.working_graphic_id = employee.working_graphic_id.id
+        db_employee.working_graphic_id = employee.working_graphic_id
 
     if employee.filial_id is not None:
-        db_employee.filial_id = employee.filial_id.id
+        db_employee.filial_id = employee.filial_id
 
     for key, value in employee.model_dump(exclude_unset=True).items():
-        setattr(db_employee, key, value)
+        if key == "position_id":
+            position = await db.execute(select(Position).filter_by(id=value))
+            position = position.scalar_one_or_none()
+            if not position:
+                raise HTTPException(status_code=404, detail="Position not found")
+            db_employee.position_id = position.id
+        elif key == "filial_id":
+            filial = await db.execute(select(Filial).filter_by(id=value))
+            filial = filial.scalar_one_or_none()
+            if not filial:
+                raise HTTPException(status_code=404, detail="Filial not found")
+            db_employee.filial_id = filial.id
+        else:
+            setattr(db_employee, key, value)
 
     await db.commit()
     await db.refresh(db_employee)
 
-    position = employee.position_id
-    working_graphic = employee.working_graphic_id
-    filial = employee.filial_id
-
-    images = await db.execute(select(EmployeeImage).filter_by(employee_id=db_employee.id))
-    images = images.scalars().all()
-
-    formatted_employee = EmployeeResponse(
-        id=db_employee.id,
-        name=db_employee.name,
-        phone_number=db_employee.phone_number,
-        position_id=position,
-        filial_id=filial,
-        working_graphic=working_graphic,
-        images=[
-            EmployeeImageResponse(
-                image_id=image.image_id,
-                employee_id=image.employee_id,
-                image_url=f"{BASE_URL}{image.image_url}",
-                created_at=image.created_at,
-                updated_at=image.updated_at,
-            ) for image in images
-        ],
-        created_at=db_employee.created_at,
-        updated_at=db_employee.updated_at
-    )
+    formatted_employee = [
+        {
+            "id": db_employee.id,
+            "name": db_employee.name,
+            "phone_number": db_employee.phone_number,
+            "position_id": db_employee.position_id,
+            "working_graphic_id": db_employee.working_graphic_id,
+            "filial_id": db_employee.filial_id,
+        }
+    ]
 
     return formatted_employee
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def make_naive(dt):
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
 
 async def delete_employee(db: AsyncSession, employee_id: int):
-    result = await db.execute(select(Employee).filter_by(id=employee_id))
-    db_employee = result.scalar_one_or_none()
-    if not db_employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
+    try:
+        result = await db.execute(select(Employee).filter_by(id=employee_id))
+        db_employee = result.scalar_one_or_none()
 
-    await db.delete(db_employee)
-    await db.commit()
-    return {"message": f"Employee {employee_id} deleted"}
+        if not db_employee:
+            logger.error(f"Employee {employee_id} not found")
+            raise HTTPException(status_code=404, detail="Employee not found")
+
+        await db.execute(delete(EmployeeImage).where(EmployeeImage.employee_id==employee_id))
+
+        db_employee.updated_at = make_naive(datetime.now(timezone.utc))
+
+        await db.delete(db_employee)
+        await db.commit()
+        logger.info(f"Employee {employee_id} deleted")
+        return {"message": f"Employee {employee_id} deleted"}
+    except Exception as e:
+        logger.error(f"Error occurred while deleting employee: {str(e)}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
