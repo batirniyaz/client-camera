@@ -277,7 +277,16 @@ async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
 
     formatted_date_attendances = []
     for db_attendance in db_attendances:
-        attendance_datetime = datetime.strptime(db_attendance.time, "%Y-%m-%d %H:%M:%S")
+        try:
+            attendance_datetime = datetime.strptime(db_attendance.time, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            try:
+                attendance_datetime = datetime.strptime(db_attendance.time, "%Y-%m-%d")
+            except ValueError:
+                try:
+                    attendance_datetime = datetime.strptime(db_attendance.time, "%Y-%m-%d %H:%M:%S.%f")
+                except ValueError:
+                    raise HTTPException(status_code=400, detail=f"Time data {db_attendance.time} does not match format %Y-%m-%d %H:%M:%S")
         attendance_date = attendance_datetime.strftime("%Y-%m")
         if attendance_date == date:
             formatted_date_attendances.append(db_attendance)
