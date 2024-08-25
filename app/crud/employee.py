@@ -282,70 +282,82 @@ async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
         if attendance_date == date:
             formatted_date_attendances.append(db_attendance)
 
-    first_attendances = {}
+    if not formatted_date_attendances:
+        raise HTTPException(status_code=404, detail="No attendances found for the specified date")
+
+    daily_attendances = {}
     for attendance in formatted_date_attendances:
-        if attendance.person_id not in first_attendances:
-            first_attendances[attendance.person_id] = attendance
-        elif parse_datetime(first_attendances[attendance.person_id].time) > parse_datetime(attendance.time):
-            first_attendances[attendance.person_id] = attendance
+        attendance_date_str = datetime.strptime(attendance.time, "%Y-%m-%d %H:%M:%S").date().isoformat()
+        if attendance_date_str not in daily_attendances:
+            daily_attendances[attendance_date_str] = {
+                'first': attendance,
+                'last': attendance
+            }
+        else:
+            if datetime.strptime(attendance.time, "%Y-%m-%d %H:%M:%S") < datetime.strptime(daily_attendances[attendance_date_str]['first'].time, "%Y-%m-%d %H:%M:%S"):
+                daily_attendances[attendance_date_str]['first'] = attendance
+            elif datetime.strptime(attendance.time, "%Y-%m-%d %H:%M:%S") > datetime.strptime(daily_attendances[attendance_date_str]['last'].time, "%Y-%m-%d %H:%M:%S"):
+                daily_attendances[attendance_date_str]['last'] = attendance
 
-    last_attendances = {}
-    for attendance in formatted_date_attendances:
-        if attendance.person_id not in last_attendances:
-            last_attendances[attendance.person_id] = attendance
-        elif parse_datetime(last_attendances[attendance.person_id].time) < parse_datetime(attendance.time):
-            last_attendances[attendance.person_id] = attendance
+    attendance_response = []
+    for attendance_date_str, att in daily_attendances.items():
+        date_obj = datetime.strptime(attendance_date_str, "%Y-%m-%d").date()
 
-    date_obj = datetime.strptime(date, "%Y-%m").date()
+        weekday = date_obj.strftime("%A").lower()
+        workday = next((day for day in db_employee.working_graphic.days if day.day == weekday), None)
 
-    attendance_response = [
-        {
-            "date": datetime.strptime(first_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").date().isoformat(),
-            "attend_time": datetime.strptime(first_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
-            "attend_image": first_attendances[attendance.person_id].file_path,
-            "late_n_minute": ((parse_datetime(first_attendances[attendance.person_id].time) - datetime.combine(
-                date_obj, datetime.strptime(db_employee.working_graphic.days[0].time_in, "%H:%M:%S").time())).total_seconds() // 60) if ((parse_datetime(
-                first_attendances[employee_id].time) - datetime.combine(date_obj,
-                                                                       datetime.strptime(db_employee.working_graphic.days[
-                                                                            0].time_in, "%H:%M:%S").time())).total_seconds() // 60) > 0 else None,
-            "early_leave_n_minute": ((datetime.combine(date_obj, datetime.strptime(db_employee.working_graphic.days[
-                0].time_out, "%H:%M:%S").time()) - parse_datetime(
-                last_attendances[attendance.person_id].time)).total_seconds() // 60) if ((datetime.combine(date_obj,
-                                                                                                  datetime.strptime(db_employee.working_graphic.days[
-                                                                                                      0].time_out, "%H:%M:%S").time()) - parse_datetime(
-                last_attendances[attendance.person_id].time)).total_seconds() // 60) > 0 else None,
-            "leave_time": datetime.strptime(last_attendances[attendance.person_id].time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
-            "leave_image": last_attendances[attendance.person_id].file_path,
-        } for attendance in formatted_date_attendances
-    ]
+        if workday:
+            time_in = datetime.combine(date_obj, datetime.strptime(workday.time_in, "%H:%M:%S").time())
+            time_out = datetime.combine(date_obj, datetime.strptime(workday.time_out, "%H:%M:%S").time())
 
-    response_model = [
-        {
-            "id": employee_id,
-            "name": db_employee.name,
-            "phone_number": db_employee.phone_number,
-            "position": db_employee.position.name,
-            "working_graphic": {
-                "id": f"{db_employee.working_graphic_id}",
-                "name": f"{db_employee.working_graphic.name}",
-                "days": {
-                    day.day: {
-                        "id": day.id,
-                        "day": day.day,
-                        "time_in": day.time_in,
-                        "time_out": day.time_out
-                    } for day in db_employee.working_graphic.days
-                } if db_employee.working_graphic else None
-            } if db_employee.working_graphic else None,
-            "filial": db_employee.filial.name,
-            "images": [
-                {
-                    "id": image.image_id,
-                    "url": f"{BASE_URL}{image.image_url}"
-                } for image in db_employee.images
-            ],
-            "attendances": attendance_response,
-        }
-    ]
+            first_att = att['first']
+            last_att = att['last']
+
+            late_n_minute = int(
+                (datetime.strptime(first_att.time, "%Y-%m-%d %H:%M:%S") - time_in).total_seconds() // 60)
+            if late_n_minute < 0:
+                late_n_minute = 0
+
+            early_leave_n_minute = int(
+                (time_out - datetime.strptime(last_att.time, "%Y-%m-%d %H:%M:%S")).total_seconds() // 60)
+            if early_leave_n_minute < 0:
+                early_leave_n_minute = 0
+
+            attendance_response.append({
+                "date": date_obj.isoformat(),
+                "attend_time": datetime.strptime(first_att.time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
+                "attend_image": first_att.file_path,
+                "late_n_minute": late_n_minute if late_n_minute > 0 else None,
+                "early_leave_n_minute": early_leave_n_minute if early_leave_n_minute > 0 else None,
+                "leave_time": datetime.strptime(last_att.time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
+                "leave_image": last_att.file_path,
+            })
+
+    response_model = {
+        "id": employee_id,
+        "name": db_employee.name,
+        "phone_number": db_employee.phone_number,
+        "position": db_employee.position.name,
+        "working_graphic": {
+            "id": f"{db_employee.working_graphic_id}",
+            "name": f"{db_employee.working_graphic.name}",
+            "days": {
+                day.day: {
+                    "id": day.id,
+                    "day": day.day,
+                    "time_in": day.time_in,
+                    "time_out": day.time_out
+                } for day in db_employee.working_graphic.days
+            } if db_employee.working_graphic else None
+        } if db_employee.working_graphic else None,
+        "filial": db_employee.filial.name,
+        "images": [
+            {
+                "id": image.image_id,
+                "url": f"{BASE_URL}{image.image_url}"
+            } for image in db_employee.images
+        ],
+        "attendances": attendance_response,
+    }
 
     return response_model
