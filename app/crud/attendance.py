@@ -1,7 +1,8 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException, UploadFile
+from sqlalchemy import func
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -208,15 +209,22 @@ async def get_commers_filials(db: AsyncSession, date: str):
     if not first_attendances:
         for employee in all_employees:
             if employee.working_graphic and employee.working_graphic.days:
+                filial_employee_count = await db.execute(select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
+                filial_employee_count = filial_employee_count.scalar()
                 did_not_come.append(
                     {
                         "employee_id": employee.id,
                         "employee_name": employee.name,
                         "employee_position": employee.position.name,
-                        "employee_filial": employee.filial.name,
                         "employee_time_in": employee.working_graphic.days[0].time_in,
                         "employee_time_out": employee.working_graphic.days[0].time_out,
-                        "employee_phone_number": employee.phone_number
+                        "employee_phone_number": employee.phone_number,
+                        "employee_filial": {
+                            "id": employee.filial.id,
+                            "name": employee.filial.name,
+                            "address": employee.filial.address,
+                            "filial_employees": filial_employee_count
+                        },
                     }
                 )
     else:
@@ -250,21 +258,32 @@ async def get_commers_filials(db: AsyncSession, date: str):
 
                 if attendance_time <= day.time_in.isoformat():
                     early_come_to_n_minute = (datetime.combine(date_obj, day.time_in) - attendance_datetime).total_seconds() // 60
+                    filial_employee_count = await db.execute(
+                        select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
+                    filial_employee_count = filial_employee_count.scalar()
                     on_time_commers.append(
                         {
                             "employee_id": employee.id,
                             "employee_name": employee.name,
                             "employee_position": employee.position.name,
-                            "employee_filial": employee.filial.name,
                             "employee_time_in": day.time_in,
                             "employee_time_out": day.time_out,
-                            "early_come_to_n_minute": early_come_to_n_minute
+                            "early_come_to_n_minute": early_come_to_n_minute,
+                            "employee_filial": {
+                                "id": employee.filial.id,
+                                "name": employee.filial.name,
+                                "address": employee.filial.address,
+                                "filial_employees": filial_employee_count
+                            },
                         }
                     )
                     day_found = True
                     break
                 elif attendance_time > day.time_in.isoformat():
                     late_to_n_minute = (attendance_datetime - datetime.combine(date_obj, day.time_in)).total_seconds() // 60
+                    filial_employee_count = await db.execute(
+                        select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
+                    filial_employee_count = filial_employee_count.scalar()
                     late_commers.append(
                         {
                             "employee_id": employee.id,
@@ -273,26 +292,37 @@ async def get_commers_filials(db: AsyncSession, date: str):
                             "attendance_time": attendance_time,
                             "late_to_n_minute": late_to_n_minute,
                             "employee_time_in": day.time_in,
+                            "employee_filial": {
+                                "id": employee.filial.id,
+                                "name": employee.filial.name,
+                                "address": employee.filial.address,
+                                "filial_employees": filial_employee_count
+                            },
                         }
                     )
                     day_found = True
                     break
 
-        attended_employees = {attendance.person_id for attendance in first_attendances.values()}
-        for employee in all_employees:
-            if employee.id not in attended_employees:
-                if employee.working_graphic and employee.working_graphic.days:
-                    did_not_come.append(
-                        {
-                            "employee_id": employee.id,
-                            "employee_name": employee.name,
-                            "employee_position": employee.position.name,
-                            "employee_filial": employee.filial.name,
-                            "employee_time_in": employee.working_graphic.days[0].time_in,
-                            "employee_time_out": employee.working_graphic.days[0].time_out,
-                            "employee_phone_number": employee.phone_number
-                        }
-                    )
+        # attended_employees = {attendance.person_id for attendance in first_attendances.values()}
+        # for employee in all_employees:
+        #     if employee.id not in attended_employees:
+        #         if employee.working_graphic and employee.working_graphic.days:
+        #             did_not_come.append(
+        #                 {
+        #                     "employee_id": employee.id,
+        #                     "employee_name": employee.name,
+        #                     "employee_position": employee.position.name,
+        #                     "employee_time_in": employee.working_graphic.days[0].time_in,
+        #                     "employee_time_out": employee.working_graphic.days[0].time_out,
+        #                     "employee_phone_number": employee.phone_number,
+        #                     "employee_filial": {
+        #                         "id": employee.filial.id,
+        #                         "name": employee.filial.name,
+        #                         "address": employee.filial.address,
+        #                         "filial_employees": len(employee.filial.employees)
+        #                     },
+        #                 }
+        #             )
     response_model = [
         {
             "success": True,
