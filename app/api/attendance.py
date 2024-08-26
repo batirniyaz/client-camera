@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..crud.attendance import create_attendance, get_attendances, get_commers_by_filial, get_commers_filials, \
-    delete_attendance, get_commers_percentage
+    delete_attendance, get_commers_percentage, get_daily_attendance
 from ..database import get_db
 from ..schemas import AttendanceDataResponse, AttendanceResponse
 
@@ -75,6 +75,18 @@ async def get_commers_percentage_endpoint(date: str, db: AsyncSession = Depends(
     :return:
     """
     return await get_commers_percentage(db, date)
+
+
+@router.get("/daily/{date}", response_model=[])
+async def get_daily_attendance_endpoint(date: str, filial_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Get the daily attendance for the given date.
+    :param filial_id:
+    :param date:
+    :param db:
+    :return:
+    """
+    return await get_daily_attendance(db, date, filial_id)
 
 
 @router.delete("/delete/{attendance_id}", response_model=[])
