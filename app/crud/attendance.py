@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from fastapi import HTTPException, UploadFile
@@ -408,8 +409,89 @@ async def delete_attendance(db: AsyncSession, attendance_id: int):
     return {"success": True, "data": "Attendance deleted successfully"}
 
 
+async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
+    try:
+        date_obj = datetime.strptime(date, "%Y-%m")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM")
+
+    result = await db.execute(select(Attendance))
+    attendances = result.scalars().all()
+
+    filtered_attendances = [
+        attendance for attendance in attendances
+        if parse_datetime(attendance.time).strftime("%Y-%m") == date
+    ]
+
+    daily_attendances = defaultdict(list)
+    for attendance in filtered_attendances:
+        day_key = parse_datetime(attendance.time).strftime("%Y-%m-%d")
+        daily_attendances[day_key].append(attendance)
+
+    response = {}
+
+    for day, attendances in daily_attendances.items():
+        first_attendances = {}
+
+        for attendance in attendances:
+            if attendance.person_id not in first_attendances:
+                first_attendances[attendance.person_id] = attendance
+            elif parse_datetime(first_attendances[attendance.person_id].time) > parse_datetime(attendance.time):
+                first_attendances[attendance.person_id] = attendance
+
+        on_time_commers = 0
+        late_commers = 0
+
+        for person_id, attendance in first_attendances.items():
+            result = await db.execute(select(Employee).filter_by(id=attendance.person_id))
+            employee = result.scalar_one_or_none()
+            if not employee or employee.filial_id != filial_id:
+                continue
+
+            attendance_datetime = parse_datetime(attendance.time)
+            time = attendance_datetime.time()
+
+            working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=employee.working_graphic_id))
+            working_graphic = working_graphic.scalar_one_or_none()
+
+            if not working_graphic:
+                raise HTTPException(status_code=404, detail="Working graphic not found")
+
+            day_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
+            working_days = day_result.scalars().all()
+
+            if not working_days:
+                raise HTTPException(status_code=404, detail="Day not found")
+
+            attendance_time = time.isoformat()
+
+            for working_day in working_days:
+                if isinstance(working_day.time_in, str):
+                    working_day.time_in = datetime.strptime(working_day.time_in, "%H:%M:%S").time()
+
+                if attendance_time <= working_day.time_in.isoformat():
+                    on_time_commers += 1
+                    break
+                elif attendance_time > working_day.time_in.isoformat():
+                    late_commers += 1
+                    break
+
+        response[day] = {
+            "on_time_commers": on_time_commers,
+            "late_commers": late_commers
+        }
+
+    return response
+
+
+
+
+
+
+
 def parse_datetime(datetime_str):
     try:
         return datetime.fromisoformat(datetime_str)
     except ValueError:
         return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+
