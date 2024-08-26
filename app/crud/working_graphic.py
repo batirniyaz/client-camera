@@ -41,6 +41,21 @@ async def get_days(db: AsyncSession, working_graphic_id: int):
     result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic_id))
     return result.scalars().all()
 
+
+async def update_day(db: AsyncSession, day_id: int, day: DayUpdate):
+    result = await db.execute(select(Day).filter_by(id=day_id))
+    db_day = result.scalar_one_or_none()
+
+    if not db_day:
+        raise HTTPException(status_code=404, detail="Day not found")
+
+    for key, value in day.model_dump(exclude_unset=True).items():
+        setattr(db_day, key, value)
+
+    await db.commit()
+    await db.refresh(db_day)
+    return db_day
+
 async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10):
     result = await db.execute(select(WorkingGraphic).offset(skip).limit(limit))
     working_graphics = result.scalars().all()
