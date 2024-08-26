@@ -345,6 +345,56 @@ async def get_commers_filials(db: AsyncSession, date: str):
     return response_model
 
 
+async def get_commers_percentage(db: AsyncSession, date: str):
+    try:
+        date_obj = datetime.strptime(date, "%Y-%m")
+        year, month = date_obj.year, date_obj.month
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM")
+
+    start_date = datetime(year, month, 1)
+    end_date = start_date.replace(month=month % 12 + 1) if month != 12 else start_date.replace(year=year + 1, month=1)
+
+    total_on_time = 0
+    total_late = 0
+    total_did_not_come = 0
+    total_days = (end_date - start_date).days
+    total_employees = 0
+
+    current_date = start_date
+    while current_date < end_date:
+        daily_result = await get_commers_filials(db, current_date.strftime("%Y-%m-%d"))
+
+        on_time_commers = daily_result[0]["on_time_commers"]["total"]
+        late_commers = daily_result[0]["late_commers"]["total"]
+        did_not_come = daily_result[0]["did_not_come"]["total"]
+
+        total_on_time += on_time_commers
+        total_late += late_commers
+        total_did_not_come += did_not_come
+        total_employees = max(total_employees, on_time_commers + late_commers + did_not_come)
+
+        current_date += timedelta(days=1)
+
+    if total_employees > 0:
+        average_on_time_percentage = (total_on_time / (total_employees * total_days)) * 100
+        average_late_percentage = (total_late / (total_employees * total_days)) * 100
+        average_did_not_come_percentage = (total_did_not_come / (total_employees * total_days)) * 100
+    else:
+        average_on_time_percentage = average_late_percentage = average_did_not_come_percentage = 0
+
+    response_model = {
+        "success": True,
+        "month": date_obj.strftime("%Y-%m"),
+        "total_days": total_days,
+        "average_on_time_percentage": average_on_time_percentage,
+        "average_late_percentage": average_late_percentage,
+        "average_did_not_come_percentage": average_did_not_come_percentage
+    }
+
+    return response_model
+
+
 async def delete_attendance(db: AsyncSession, attendance_id: int):
     result = await db.execute(select(Attendance).filter_by(id=attendance_id))
     attendance = result.scalar_one_or_none()
