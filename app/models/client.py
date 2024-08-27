@@ -30,6 +30,7 @@ class DailyReport(Base):
     clients: Mapped[list[int]] = mapped_column(JSON, default=[])
     gender: Mapped[dict[str, int]] = mapped_column(JSON, default={"male": 0, "female": 0})
     age: Mapped[dict[str, int]] = mapped_column(JSON, default={})
+    time_slots: Mapped[dict[str, int]] = mapped_column(JSON, default={})
     total_new_clients: Mapped[int] = mapped_column(default=0)
     total_regular_clients: Mapped[int] = mapped_column(default=0)
 
