@@ -104,7 +104,7 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
         )
         formatted_employees.append(formatted_employee)
 
-    return formatted_employees
+    return [formatted_employees]
 
 
 async def get_employee(db: AsyncSession, employee_id: int):
@@ -226,7 +226,7 @@ async def update_employee(db: AsyncSession, employee_id: int, employee: Employee
         }
     ]
 
-    return formatted_employee
+    return [formatted_employee]
 
 
 import logging
