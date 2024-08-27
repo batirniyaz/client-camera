@@ -255,7 +255,10 @@ async def get_commers_filials(db: AsyncSession, date: str):
 
             for day in day:
                 if isinstance(day.time_in, str):
-                    day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                    try:
+                        day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                    except ValueError:
+                        day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
 
                 if attendance_time <= day.time_in.isoformat():
                     early_come_to_n_minute = (datetime.combine(date_obj, day.time_in) - attendance_datetime).total_seconds() // 60
@@ -366,14 +369,15 @@ async def get_commers_percentage(db: AsyncSession, date: str):
     while current_date < end_date:
         daily_result = await get_commers_filials(db, current_date.strftime("%Y-%m-%d"))
 
-        on_time_commers = daily_result[0]["on_time_commers"]["total"]
-        late_commers = daily_result[0]["late_commers"]["total"]
-        did_not_come = daily_result[0]["did_not_come"]["total"]
+        if daily_result:
+            on_time_commers = daily_result[0]["on_time_commers"]["total"]
+            late_commers = daily_result[0]["late_commers"]["total"]
+            did_not_come = daily_result[0]["did_not_come"]["total"]
+            total_employees = daily_result[0]["total"]
 
-        total_on_time += on_time_commers
-        total_late += late_commers
-        total_did_not_come += did_not_come
-        total_employees = max(total_employees, on_time_commers + late_commers + did_not_come)
+            total_on_time += on_time_commers
+            total_late += late_commers
+            total_did_not_come += did_not_come
 
         current_date += timedelta(days=1)
 
@@ -467,7 +471,10 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
 
             for working_day in working_days:
                 if isinstance(working_day.time_in, str):
-                    working_day.time_in = datetime.strptime(working_day.time_in, "%H:%M:%S").time()
+                    try:
+                        working_day.time_in = datetime.strptime(working_day.time_in, "%H:%M:%S").time()
+                    except ValueError:
+                        working_day.time_in = datetime.strptime(working_day.time_in, "%H:%M").time()
 
                 if attendance_time <= working_day.time_in.isoformat():
                     on_time_commers += 1
