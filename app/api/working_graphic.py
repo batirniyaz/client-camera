@@ -40,7 +40,7 @@ async def update_working_graphic_endpoint(working_graphic_id: int, working_graph
     return await update_working_graphic(db, working_graphic_id, working_graphic)
 
 
-@router.put("/day/{day_id}", response_model=DayResponse)
+@router.put("/day/{day_id}", response_model=dict)
 async def update_day_endpoint(day_id: int, day: DayUpdate, db: AsyncSession = Depends(get_db)):
     return await update_day(db, day_id, day)
 
