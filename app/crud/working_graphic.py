@@ -54,7 +54,16 @@ async def update_day(db: AsyncSession, day_id: int, day: DayUpdate):
 
     await db.commit()
     await db.refresh(db_day)
-    return db_day
+    return {
+        "id": db_day.id,
+        "day": db_day.day,
+        "time_in": db_day.time_in,
+        "time_out": db_day.time_out,
+        "is_work_day": db_day.is_work_day,
+        "created_at": db_day.created_at,
+        "updated_at": db_day.updated_at,
+    }
+
 
 async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10):
     result = await db.execute(select(WorkingGraphic).offset(skip).limit(limit))
