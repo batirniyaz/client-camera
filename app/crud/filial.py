@@ -130,57 +130,50 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
     if not employees:
         raise HTTPException(status_code=404, detail="Employees not found")
 
-    formatted_filial_employees = []
-    for filial_employee in employees:
-        attendance_results = await db.execute(select(Attendance).filter_by(person_id=filial_employee.id))
-        attendances = attendance_results.scalars().all()
-        formatted_filial_employees.extend(attendances)
-
     formatted_date_employees = []
-    for employee in formatted_filial_employees:
-        employee_created_at = make_naive(employee.created_at)
-        employee_date = datetime.fromisoformat(str(employee_created_at)).date().isoformat()
-        if date.startswith(employee_date[:7]) if len(date) == 7 else date == employee_date:
-            formatted_date_employees.append(employee)
+    for employee in employees:
+        attendance_results = await db.execute(select(Attendance).filter_by(person_id=employee.id))
+        attendances = attendance_results.scalars().all()
 
-    formatted_employees = {}
-    for employee in formatted_date_employees:
-        result = await db.execute(select(Employee).filter_by(id=employee.person_id))
-        employee_data = result.scalar_one_or_none()
-        if not employee_data:
-            raise HTTPException(status_code=404, detail="Employee not found")
-        formatted_employees[employee.person_id] = employee_data
+        for attendance in attendances:
+            attendance_date = make_naive(attendance.created_at).date().isoformat()
+            if date.startswith(attendance_date[:7]) if len(date) == 7 else date == attendance_date:
+                formatted_date_employees.append(attendance)
+
+    if not formatted_date_employees:
+        raise HTTPException(status_code=404, detail="No attendances found for the specified date")
+
+    formatted_employees = {employee.id: employee for employee in employees}
 
     position_result = await db.execute(select(Position))
-    positions = position_result.scalars().all()
+    positions = {position.id: position for position in position_result.scalars().all()}
 
-    filial_result = await db.execute(select(Filial))
-    filials = filial_result.scalars().all()
+    filial_result = await db.execute(select(Filial).filter_by(id=filial_id))
+    filial = filial_result.scalar_one_or_none()
+    if not filial:
+        raise HTTPException(status_code=404, detail="Filial not found")
 
-    response_model = [
-        {
-            "success": True,
-            "total": len(formatted_date_employees),
-            "data": [
-                {
-                    "id": attendance.id,
-                    "employee": {"id": attendance.person_id, "name": formatted_employees[attendance.person_id].name},
-                    "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}"
-                    if formatted_employees[attendance.person_id].images else None,
-                    "position": {"id": formatted_employees[attendance.person_id].position_id,
-                                 "name": positions[formatted_employees[attendance.person_id].position_id].name},
-                    "filial": {"id": formatted_employees[attendance.person_id].filial_id,
-                               "name": filials[formatted_employees[attendance.person_id].filial_id].name},
-                    "score": attendance.score,
-                    "time": attendance.time,
-                    "attendance_image": f"{BASE_URL}{attendance.file_path}",
-                    "camera_id": attendance.camera_id,
-                    "created_at": attendance.created_at,
-                    "updated_at": attendance.updated_at,
-                } for attendance in formatted_date_employees
-            ]
-        }
-    ]
+    response_model = {
+        "success": True,
+        "total": len(formatted_date_employees),
+        "data": [
+            {
+                "id": attendance.id,
+                "employee": {"id": attendance.person_id, "name": formatted_employees[attendance.person_id].name},
+                "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}"
+                if formatted_employees[attendance.person_id].images else None,
+                "position": {"id": formatted_employees[attendance.person_id].position_id,
+                             "name": positions[formatted_employees[attendance.person_id].position_id].name},
+                "filial": {"id": filial.id, "name": filial.name},
+                "score": attendance.score,
+                "time": attendance.time,
+                "attendance_image": f"{BASE_URL}{attendance.file_path}",
+                "camera_id": attendance.camera_id if attendance.camera_id else None,
+                "created_at": attendance.created_at,
+                "updated_at": attendance.updated_at,
+            } for attendance in formatted_date_employees
+        ]
+    }
     return response_model
 
 
