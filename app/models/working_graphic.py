@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -12,8 +13,8 @@ class Day(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     day: Mapped[str] = mapped_column()
-    time_in: Mapped[str] = mapped_column()
-    time_out: Mapped[str] = mapped_column()
+    time_in: Mapped[str] = mapped_column(nullable=True)
+    time_out: Mapped[str] = mapped_column(nullable=True)
     is_work_day: Mapped[bool] = mapped_column()
 
     working_graphic_id: Mapped[int] = mapped_column(ForeignKey("working_graphics.id"))
