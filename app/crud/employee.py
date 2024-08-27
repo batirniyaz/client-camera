@@ -311,8 +311,14 @@ async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
         workday = next((day for day in db_employee.working_graphic.days if day.day == weekday), None)
 
         if workday:
-            time_in = datetime.combine(date_obj, datetime.strptime(workday.time_in, "%H:%M:%S").time())
-            time_out = datetime.combine(date_obj, datetime.strptime(workday.time_out, "%H:%M:%S").time())
+            try:
+                time_in = datetime.combine(date_obj, datetime.strptime(workday.time_in, "%H:%M:%S").time())
+            except ValueError:
+                time_in = datetime.combine(date_obj, datetime.strptime(workday.time_in, "%H:%M").time())
+            try:
+                time_out = datetime.combine(date_obj, datetime.strptime(workday.time_out, "%H:%M:%S").time())
+            except ValueError:
+                time_out = datetime.combine(date_obj, datetime.strptime(workday.time_out, "%H:%M").time())
 
             first_att = att['first']
             last_att = att['last']
