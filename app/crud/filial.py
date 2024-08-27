@@ -165,7 +165,8 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
                 {
                     "id": attendance.id,
                     "employee": {"id": attendance.person_id, "name": formatted_employees[attendance.person_id].name},
-                    "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}",
+                    "main_image": f"{BASE_URL}{formatted_employees[attendance.person_id].images[0].image_url}"
+                    if formatted_employees[attendance.person_id].images else None,
                     "position": {"id": formatted_employees[attendance.person_id].position_id,
                                  "name": positions[formatted_employees[attendance.person_id].position_id].name},
                     "filial": {"id": formatted_employees[attendance.person_id].filial_id,
