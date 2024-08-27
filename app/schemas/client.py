@@ -44,6 +44,7 @@ class DailyReportBase(BaseModel):
     clients: list[int] = Field([], description="A list of clients")
     gender: dict[str, int] = Field({}, description="A dictionary for gender distribution")
     age: dict[int, int] = Field({}, description="A dictionary for age distribution")
+    time_slots: dict[str, int] = Field({}, description="A dictionary for time slots")
     total_new_clients: int = Field(..., description="The total number of new clients")
     total_regular_clients: int = Field(..., description="The total number of regular clients")
 
@@ -65,6 +66,7 @@ class DailyReportResponse(DailyReportBase):
                 "clients": [1, 2, 3],
                 "gender": {"male": 4, "female": 2},
                 "age": {20: 2, 25: 3, 30: 1},
+                "time_slots": {"12:00": 2, "12:30": 3, "13:00": 1},
                 "total_new_clients": 4,
                 "total_regular_clients": 2,
             }
