@@ -1,10 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException, BackgroundTasks
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.future import select
+
+from .attendance import parse_datetime
 from ..models import Client, DailyReport
 from ..schemas import ClientResponse, ClientCreate, DailyReportResponse, DailyReportCreate
 import logging
@@ -55,12 +57,19 @@ async def store_daily_report(db: AsyncSession, date: str, client):
         result = await db.execute(select(DailyReport).filter_by(date=date))
         daily_report = result.scalar_one_or_none()
 
+        client_time = parse_datetime(client.time)
+        rounded_time = client_time.replace(second=0, microsecond=0, minute=0, hour=client_time.hour) + timedelta(
+            minutes=30 * round(client_time.minute / 30)
+        )
+        rounded_time_str = rounded_time.strftime("%H:%M")
+
         if daily_report is None:
             daily_report = DailyReport(
                 date=date,
                 clients=[client.id],
                 gender={client.gender: 1},
                 age={str(client.age): 1},
+                time_slots={rounded_time_str: 1},
                 total_new_clients=1 if client.client_status == "new" else 0,
                 total_regular_clients=1 if client.client_status == "regular" else 0,
             )
@@ -86,16 +95,20 @@ async def store_daily_report(db: AsyncSession, date: str, client):
                 age_key = str(client.age)
                 daily_report.age[age_key] = daily_report.age.get(age_key, 0) + 1
 
+                if daily_report.time_slots is None:
+                    daily_report.time_slots = {}
+                daily_report.time_slots[rounded_time_str] = daily_report.time_slots.get(rounded_time_str, 0) + 1
 
             flag_modified(daily_report, "gender")
             flag_modified(daily_report, "age")
+            flag_modified(daily_report, "time_slots")
 
             print(f"After update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
 
         db.add(daily_report)
         await db.commit()
         await db.refresh(daily_report)
-        print(f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+        print(f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}, {daily_report.time_slots=}")
 
     except SQLAlchemyError as e:
         await db.rollback()
@@ -109,3 +122,4 @@ async def get_daily_report(db: AsyncSession, date: str):
     if not daily_report:
         raise HTTPException(status_code=404, detail="Daily report not found")
     return DailyReportResponse.model_validate(daily_report)
+
