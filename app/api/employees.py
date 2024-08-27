@@ -23,7 +23,7 @@ async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = 
     return await create_employee(db, employee)
 
 
-@router.get("/", response_model=List[EmployeeResponse])
+@router.get("/", response_model=[])
 async def get_employees_endpoint(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
     """
     Get a list of employees with the given details.
@@ -36,7 +36,7 @@ async def get_employees_endpoint(skip: int = 0, limit: int = 10, db: AsyncSessio
     return await get_employees(db, skip, limit)
 
 
-@router.get("/{employee_id}", response_model=EmployeeResponse)
+@router.get("/{employee_id}", response_model=[])
 async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get an employee with the given ID.
