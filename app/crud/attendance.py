@@ -106,7 +106,10 @@ async def get_commers_by_filial(db: AsyncSession, date: str, filial_id: int):
 
         for day in day:
             if isinstance(day.time_in, str):
-                day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                try:
+                    day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                except ValueError:
+                    day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
 
             if attendance_time <= day.time_in.isoformat():
                 early_come_to_n_minute = (datetime.combine(date_obj,
