@@ -105,6 +105,9 @@ async def get_commers_by_filial(db: AsyncSession, date: str, filial_id: int):
         day_found = False
 
         for day in day:
+            if day.time_in is None:
+                continue
+
             if isinstance(day.time_in, str):
                 try:
                     day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
@@ -213,7 +216,8 @@ async def get_commers_filials(db: AsyncSession, date: str):
     if not first_attendances:
         for employee in all_employees:
             if employee.working_graphic and employee.working_graphic.days:
-                filial_employee_count = await db.execute(select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
+                filial_employee_count = await db.execute(
+                    select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
                 filial_employee_count = filial_employee_count.scalar()
                 did_not_come.append(
                     {
@@ -264,7 +268,8 @@ async def get_commers_filials(db: AsyncSession, date: str):
                         day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
 
                 if attendance_time <= day.time_in.isoformat():
-                    early_come_to_n_minute = (datetime.combine(date_obj, day.time_in) - attendance_datetime).total_seconds() // 60
+                    early_come_to_n_minute = (datetime.combine(date_obj,
+                                                               day.time_in) - attendance_datetime).total_seconds() // 60
                     filial_employee_count = await db.execute(
                         select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
                     filial_employee_count = filial_employee_count.scalar()
@@ -287,7 +292,8 @@ async def get_commers_filials(db: AsyncSession, date: str):
                     day_found = True
                     break
                 elif attendance_time > day.time_in.isoformat():
-                    late_to_n_minute = (attendance_datetime - datetime.combine(date_obj, day.time_in)).total_seconds() // 60
+                    late_to_n_minute = (attendance_datetime - datetime.combine(date_obj,
+                                                                               day.time_in)).total_seconds() // 60
                     filial_employee_count = await db.execute(
                         select(func.count(Employee.id)).filter_by(filial_id=employee.filial.id))
                     filial_employee_count = filial_employee_count.scalar()
@@ -494,14 +500,8 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
     return response
 
 
-
-
-
-
-
 def parse_datetime(datetime_str):
     try:
         return datetime.fromisoformat(datetime_str)
     except ValueError:
         return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
-
