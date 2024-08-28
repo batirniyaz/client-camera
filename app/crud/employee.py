@@ -5,7 +5,6 @@ from sqlalchemy import delete
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .attendance import parse_datetime
 from ..schemas import DayResponse
 from ..schemas import WorkingGraphicResponse, EmployeeImageResponse
 from ..schemas.position import PositionResponse
@@ -15,6 +14,11 @@ from ..models.employee import Employee
 from ..schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeResponse
 
 from app.database import BASE_URL
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 async def create_employee(db: AsyncSession, employee: EmployeeCreate):
@@ -104,7 +108,7 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
         )
         formatted_employees.append(formatted_employee)
 
-    return [formatted_employees]
+    return [employee.model_dump() for employee in formatted_employees]
 
 
 async def get_employee(db: AsyncSession, employee_id: int):
@@ -180,7 +184,7 @@ async def get_employee(db: AsyncSession, employee_id: int):
         updated_at=employee.updated_at
     )
 
-    return formatted_employee
+    return formatted_employee.model_dump()
 
 
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
@@ -226,13 +230,7 @@ async def update_employee(db: AsyncSession, employee_id: int, employee: Employee
         }
     ]
 
-    return [formatted_employee]
-
-
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+    return formatted_employee
 
 
 def make_naive(dt):
