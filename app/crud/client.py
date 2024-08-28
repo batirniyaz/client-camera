@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import HTTPException, BackgroundTasks
+from sqlalchemy import Date, cast, TIMESTAMP
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
@@ -61,7 +62,7 @@ async def store_daily_report(
 ):
     try:
         if date:
-            result = await db.execute(select(DailyReport).filter_by(date=date.date()))
+            result = await db.execute(select(DailyReport).where(cast(DailyReport.date, Date) == date.date()))
             daily_report = result.scalar_one_or_none()
 
             if not daily_report:
@@ -87,44 +88,45 @@ async def store_daily_report(
 
         query = select(Client)
         if start_datetime and end_datetime:
-            query = query.filter(Client.time >= start_datetime, Client.time <= end_datetime)
+            query = query.filter(
+                cast(Client.time, TIMESTAMP) >= start_datetime,
+                cast(Client.time, TIMESTAMP) <= end_datetime
+            )
         elif start_datetime:
-            query = query.filter(Client.time >= start_datetime)
+            query = query.filter(cast(Client.time, TIMESTAMP) >= start_datetime)
         elif end_datetime:
-            query = query.filter(Client.time <= end_datetime)
+            query = query.filter(cast(Client.time, TIMESTAMP) <= end_datetime)
         elif date:
             day_start = date.replace(hour=0, minute=0, second=0)
             day_end = date.replace(hour=23, minute=59, second=59)
-            query = query.filter(Client.time >= day_start, Client.time <= day_end)
+            query = query.filter(
+                cast(Client.time, TIMESTAMP) >= day_start,
+                cast(Client.time, TIMESTAMP) <= day_end
+            )
 
         clients_result = await db.execute(query)
         clients = clients_result.scalars().all()
 
         for client in clients:
             if client.id not in daily_report.clients:
-                # Update client counts
                 if client.client_status == "new":
                     daily_report.total_new_clients += 1
                 else:
                     daily_report.total_regular_clients += 1
 
-                # Update clients list
                 daily_report.clients.append(client.id)
 
-                # Update gender distribution
                 if client.gender in daily_report.gender:
                     daily_report.gender[client.gender] += 1
                 else:
                     daily_report.gender[client.gender] = 1
 
-                # Update age distribution
                 age_str = str(client.age)
                 if age_str in daily_report.age:
                     daily_report.age[age_str] += 1
                 else:
                     daily_report.age[age_str] = 1
 
-                # Update time slot counts
                 client_time = datetime.strptime(client.time, "%Y-%m-%d %H:%M:%S").time()
                 rounded_time_slot = round_time_slot(client_time)
                 if rounded_time_slot in daily_report.time_slots:
@@ -144,7 +146,7 @@ async def store_daily_report(
         await db.refresh(daily_report)
         print(f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}, {daily_report.time_slots=}")
 
-        return daily_report
+        return DailyReportResponse.model_validate(daily_report).model_dump()
 
     except SQLAlchemyError as e:
         await db.rollback()
@@ -153,7 +155,7 @@ async def store_daily_report(
 
 
 async def get_daily_report(db: AsyncSession, date: str):
-    result = await db.execute(select(DailyReport).filter_by(date=date))
+    result = await db.execute(select(DailyReport).where(cast(DailyReport.date, Date) == date))
     daily_report = result.scalar_one_or_none()
     if not daily_report:
         raise HTTPException(status_code=404, detail="Daily report not found")
