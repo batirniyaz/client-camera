@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..crud.working_graphic import create_day, create_working_graphic, \
-    get_working_graphics, get_working_graphic, update_working_graphic, delete_working_graphic, get_days, update_day
+    get_working_graphics, get_working_graphic, update_working_graphic, delete_working_graphic, get_days, update_day, \
+    delete_day
 from ..schemas.working_graphic import WorkingGraphicCreate, WorkingGraphicResponse, DayCreate, DayResponse, \
     WorkingGraphicUpdate, DayUpdate
 from app.database import get_db
@@ -48,3 +49,8 @@ async def update_day_endpoint(day_id: int, day: DayUpdate, db: AsyncSession = De
 @router.delete("/{working_graphic_id}")
 async def delete_working_graphic_endpoint(working_graphic_id: int, db: AsyncSession = Depends(get_db)):
     return await delete_working_graphic(db, working_graphic_id)
+
+
+@router.delete("/day/{day_id}")
+async def delete_day_endpoint(day_id: int, db: AsyncSession = Depends(get_db)):
+    return await delete_day(db, day_id)
