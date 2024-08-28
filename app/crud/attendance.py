@@ -497,7 +497,7 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
             "late_commers": late_commers
         }
 
-    return response
+    return {"success": True, "data": response}
 
 
 def parse_datetime(datetime_str):
