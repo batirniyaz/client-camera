@@ -336,11 +336,11 @@ async def get_employee_deep(db: AsyncSession, employee_id: int, date: str):
             attendance_response.append({
                 "date": date_obj.isoformat(),
                 "attend_time": datetime.strptime(first_att.time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
-                "attend_image": first_att.file_path,
+                "attend_image": f"{BASE_URL}{first_att.file_path}",
                 "late_n_minute": late_n_minute if late_n_minute > 0 else None,
                 "early_leave_n_minute": early_leave_n_minute if early_leave_n_minute > 0 else None,
                 "leave_time": datetime.strptime(last_att.time, "%Y-%m-%d %H:%M:%S").time().isoformat(),
-                "leave_image": last_att.file_path,
+                "leave_image": f"{BASE_URL}{first_att.file_path}",
             })
 
     response_model = {
