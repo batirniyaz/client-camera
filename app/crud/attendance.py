@@ -505,3 +505,72 @@ def parse_datetime(datetime_str):
         return datetime.fromisoformat(datetime_str)
     except ValueError:
         return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+
+
+async def get_attend_day(db: AsyncSession, date: str, filial_id: int):
+    try:
+        result = await db.execute(select(Employee).filter_by(filial_id=filial_id))
+        employees = result.scalars().all()
+
+        formatted_employee_attendances = []
+        for formatted_employee in employees:
+            attendance_results = await db.execute(select(Attendance).filter_by(person_id=formatted_employee.id))
+            attendances = attendance_results.scalars().all()
+
+            first_attendnace = {}
+            for attendance in attendances:
+                attendance_date = parse_datetime(attendance.time).date().isoformat()
+                if not attendance_date == date:
+                    continue
+
+                if attendance.person_id not in first_attendnace:
+                    first_attendnace[attendance.person_id] = attendance
+                elif parse_datetime(first_attendnace[attendance.person_id].time) > parse_datetime(attendance.time):
+                    first_attendnace[attendance.person_id] = attendance
+
+            for person_id, attendance in first_attendnace.items():
+                attendance_datetime = parse_datetime(attendance.time)
+                time = attendance_datetime.time()
+
+                working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=formatted_employee.working_graphic_id))
+                working_graphic = working_graphic.scalar_one_or_none()
+                if not working_graphic:
+                    raise HTTPException(status_code=404, detail="Working graphic not found")
+
+                day_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
+                day = day_result.scalars().all()
+
+                if not day:
+                    raise HTTPException(status_code=404, detail="Day not found")
+
+                attendance_time = time.isoformat()
+
+                for day in day:
+                    if isinstance(day.time_in, str):
+                        try:
+                            day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                        except ValueError:
+                            day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
+
+                    if attendance_time > day.time_in.isoformat():
+                        late_n_minute = (attendance_datetime - datetime.combine(parse_datetime(date).date(), day.time_in)).total_seconds() // 60
+                        formatted_employee_attendances.append(
+                            {
+                                "employee_id": formatted_employee.id,
+                                "employee_name": formatted_employee.name,
+                                "employee_position": formatted_employee.position.name,
+                                "employee_filial": formatted_employee.filial.name,
+                                "attendance_time": attendance_time,
+                                "late_n_minute": late_n_minute if late_n_minute > 0 else None,
+                            }
+                        )
+                        break
+
+        return {
+            "success": True,
+            "total": len(formatted_employee_attendances),
+            "data": formatted_employee_attendances
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
