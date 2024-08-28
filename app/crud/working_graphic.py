@@ -49,11 +49,16 @@ async def update_day(db: AsyncSession, day_id: int, day: DayUpdate):
     if not db_day:
         raise HTTPException(status_code=404, detail="Day not found")
 
-    for key, value in day.model_dump(exclude_unset=True).items():
-        setattr(db_day, key, value)
+    if day.time_in is None and day.time_out is None:
+        await db.delete(db_day)
+        return {"message": f"Day {day_id} deleted"}
+    else:
+        for key, value in day.model_dump(exclude_unset=True).items():
+            setattr(db_day, key, value)
 
-    await db.commit()
-    await db.refresh(db_day)
+        await db.commit()
+        await db.refresh(db_day)
+        return db_day
     # return {
     #     "id": db_day.id,
     #     "day": db_day.day,
@@ -193,3 +198,15 @@ async def delete_working_graphic(db: AsyncSession, working_graphic_id: int):
     await db.delete(db_working_graphic)
     await db.commit()
     return {"message": f"Working graphic {working_graphic_id} deleted"}
+
+
+async def delete_day(db: AsyncSession, day_id: int):
+    result = await db.execute(select(Day).filter_by(id=day_id))
+    db_day = result.scalar_one_or_none()
+
+    if not db_day:
+        raise HTTPException(status_code=404, detail="Day not found")
+
+    await db.delete(db_day)
+    await db.commit()
+    return {"message": f"Day {day_id} deleted"}
