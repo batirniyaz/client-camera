@@ -316,26 +316,6 @@ async def get_commers_filials(db: AsyncSession, date: str):
                     day_found = True
                     break
 
-        # attended_employees = {attendance.person_id for attendance in first_attendances.values()}
-        # for employee in all_employees:
-        #     if employee.id not in attended_employees:
-        #         if employee.working_graphic and employee.working_graphic.days:
-        #             did_not_come.append(
-        #                 {
-        #                     "employee_id": employee.id,
-        #                     "employee_name": employee.name,
-        #                     "employee_position": employee.position.name,
-        #                     "employee_time_in": employee.working_graphic.days[0].time_in,
-        #                     "employee_time_out": employee.working_graphic.days[0].time_out,
-        #                     "employee_phone_number": employee.phone_number,
-        #                     "employee_filial": {
-        #                         "id": employee.filial.id,
-        #                         "name": employee.filial.name,
-        #                         "address": employee.filial.address,
-        #                         "filial_employees": len(employee.filial.employees)
-        #                     },
-        #                 }
-        #             )
     response_model = [
         {
             "success": True,
@@ -531,43 +511,55 @@ async def get_attend_day(db: AsyncSession, date: str, filial_id: int):
                 elif parse_datetime(first_attendnace[attendance.person_id].time) > parse_datetime(attendance.time):
                     first_attendnace[attendance.person_id] = attendance
 
-            for person_id, attendance in first_attendnace.items():
-                attendance_datetime = parse_datetime(attendance.time)
-                time = attendance_datetime.time()
+            if not first_attendnace:
+                formatted_employee_attendances.append(
+                    {
+                        "employee_id": formatted_employee.id,
+                        "employee_name": formatted_employee.name,
+                        "employee_position": formatted_employee.position.name,
+                        "employee_filial": formatted_employee.filial.name,
+                        "attendance_time": None,
+                        "late_n_minute": None,
+                    }
+                )
+            else:
+                for person_id, attendance in first_attendnace.items():
+                    attendance_datetime = parse_datetime(attendance.time)
+                    time = attendance_datetime.time()
 
-                working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=formatted_employee.working_graphic_id))
-                working_graphic = working_graphic.scalar_one_or_none()
-                if not working_graphic:
-                    raise HTTPException(status_code=404, detail="Working graphic not found")
+                    working_graphic = await db.execute(select(WorkingGraphic).filter_by(id=formatted_employee.working_graphic_id))
+                    working_graphic = working_graphic.scalar_one_or_none()
+                    if not working_graphic:
+                        raise HTTPException(status_code=404, detail="Working graphic not found")
 
-                day_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
-                day = day_result.scalars().all()
+                    day_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
+                    day = day_result.scalars().all()
 
-                if not day:
-                    raise HTTPException(status_code=404, detail="Day not found")
+                    if not day:
+                        raise HTTPException(status_code=404, detail="Day not found")
 
-                attendance_time = time.isoformat()
+                    attendance_time = time.isoformat()
 
-                for day in day:
-                    if isinstance(day.time_in, str):
-                        try:
-                            day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
-                        except ValueError:
-                            day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
+                    for day in day:
+                        if isinstance(day.time_in, str):
+                            try:
+                                day.time_in = datetime.strptime(day.time_in, "%H:%M:%S").time()
+                            except ValueError:
+                                day.time_in = datetime.strptime(day.time_in, "%H:%M").time()
 
-                    if attendance_time > day.time_in.isoformat():
-                        late_n_minute = (attendance_datetime - datetime.combine(parse_datetime(date).date(), day.time_in)).total_seconds() // 60
-                        formatted_employee_attendances.append(
-                            {
-                                "employee_id": formatted_employee.id,
-                                "employee_name": formatted_employee.name,
-                                "employee_position": formatted_employee.position.name,
-                                "employee_filial": formatted_employee.filial.name,
-                                "attendance_time": attendance_time,
-                                "late_n_minute": late_n_minute if late_n_minute > 0 else None,
-                            }
-                        )
-                        break
+                        if attendance_time > day.time_in.isoformat():
+                            late_n_minute = (attendance_datetime - datetime.combine(parse_datetime(date).date(), day.time_in)).total_seconds() // 60
+                            formatted_employee_attendances.append(
+                                {
+                                    "employee_id": formatted_employee.id,
+                                    "employee_name": formatted_employee.name,
+                                    "employee_position": formatted_employee.position.name,
+                                    "employee_filial": formatted_employee.filial.name,
+                                    "attendance_time": attendance_time if attendance_time is not None else None,
+                                    "late_n_minute": late_n_minute if late_n_minute > 0 else None,
+                                }
+                            )
+                            break
 
         return {
             "success": True,
