@@ -358,7 +358,7 @@ async def get_commers_filials(db: AsyncSession, date: str):
     return response_model
 
 
-async def get_commers_percentage(db: AsyncSession, date: str):
+async def get_commers_percentage(db: AsyncSession, date: str, filial_id: int):
     try:
         date_obj = datetime.strptime(date, "%Y-%m")
         year, month = date_obj.year, date_obj.month
@@ -376,7 +376,7 @@ async def get_commers_percentage(db: AsyncSession, date: str):
 
     current_date = start_date
     while current_date < end_date:
-        daily_result = await get_commers_filials(db, current_date.strftime("%Y-%m-%d"))
+        daily_result = await get_commers_by_filial(db, current_date.strftime("%Y-%m-%d"), filial_id)
 
         if daily_result:
             on_time_commers = daily_result[0]["on_time_commers"]["total"]
