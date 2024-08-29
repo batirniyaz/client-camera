@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from ..crud.filial import create_filial, get_filials, delete_filial, update_filial, get_filial, get_filial_employees_by_date
+from ..crud.filial import create_filial, get_filials, delete_filial, update_filial, get_filial, \
+    get_filial_employees_by_date, get_commers_filials
 from ..schemas.filial import FilialCreate, FilialResponse, FilialUpdate
 from ..database import get_db
 
@@ -58,6 +59,18 @@ async def get_filial_employees_by_date_endpoint(filial_id: int, date: str, db: A
     :return:
     """
     return await get_filial_employees_by_date(db, filial_id, date)
+
+
+@router.get("/commers/", response_model=[])
+async def get_commers_filials_endpoint(db: AsyncSession = Depends(get_db), date: str = Query(...)):
+
+    """
+    Get the commers for the given date.
+    :param date:
+    :param db:
+    :return:
+    """
+    return await get_commers_filials(db, date)
 
 
 @router.put("/{filial_id}", response_model=[])
