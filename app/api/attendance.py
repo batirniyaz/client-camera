@@ -67,14 +67,15 @@ async def get_commers_filials_endpoint(date: str, db: AsyncSession = Depends(get
 
 
 @router.get("/commers-percent/{date}", response_model=[])
-async def get_commers_percentage_endpoint(date: str, db: AsyncSession = Depends(get_db)):
+async def get_commers_percentage_endpoint(date: str, filial_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get the commers percentage for the given date.
+    :param filial_id:
     :param date:
     :param db:
     :return:
     """
-    return await get_commers_percentage(db, date)
+    return await get_commers_percentage(db, date, filial_id)
 
 
 @router.get("/daily/{date}", response_model=[])
