@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from ..crud.attendance import get_commers_by_filial
 from ..database import BASE_URL
 from ..models import Employee, Attendance, Position
 from ..models.filial import Filial
@@ -202,3 +203,17 @@ async def delete_filial(db: AsyncSession, filial_id: int):
     await db.delete(db_filial)
     await db.commit()
     return {"message": f"Filial {filial_id} deleted"}
+
+
+async def get_commers_filials(db: AsyncSession, date: str):
+    result = await db.execute(select(Filial))
+    filials = result.scalars().all()
+    if not filials:
+        raise HTTPException(status_code=404, detail="Filials not found")
+
+    formatted_filials = []
+    for filial in filials:
+        filial_commers = await get_commers_by_filial(db, date, filial.id)
+        formatted_filials.append({"filial_id": filial.id, "filial_name": filial.name, "data": filial_commers})
+
+    return formatted_filials
