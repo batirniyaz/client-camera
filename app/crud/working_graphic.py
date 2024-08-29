@@ -14,7 +14,7 @@ async def create_day(db: AsyncSession, day: DayCreate, working_graphic_id: int):
 
         db_day = Day(**day.model_dump(), working_graphic_id=working_graphic_id)
 
-        if db_day.time_out is None and db_day.time_in is None:
+        if db_day.time_out is None or db_day.time_in is None:
             return None
         else:
             db.add(db_day)
