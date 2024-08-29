@@ -49,3 +49,15 @@ async def delete_user(db: AsyncSession, user_id: int):
     await db.delete(db_user)
     await db.commit()
     return {"message": f"User {user_id} deleted"}
+
+sms = []
+
+
+async def send_sms(db: AsyncSession, sender_number: str, sender_message: str):
+    data = {"sender_number": sender_number, "sender_message": sender_message}
+    sms.append(data)
+    return {"message": "SMS stored successfully"}
+
+
+async def get_sms():
+    return sms

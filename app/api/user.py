@@ -1,11 +1,35 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..crud import get_users, get_user, create_user, update_user, delete_user
 from ..database import get_db
 from ..schemas import UserCreate, UserResponse, UserUpdate
+from app.crud.user import send_sms, get_sms
 
 router = APIRouter()
+
+
+@router.post("/send_sms", response_model=[])
+async def send_sms_endpoint(sender_number: str = Query(...), sender_message: str = Query(...),
+                            db: AsyncSession = Depends(get_db)):
+    """
+    Send SMS to the user.
+    :param sender_message:
+    :param sender_number:
+    :param db:
+    :return:
+    """
+    return await send_sms(db, sender_number, sender_message)
+
+
+@router.get("/sms", response_model=[])
+async def get_sms_endpoint():
+    """
+    Get the list of SMS.
+    :param db:
+    :return:
+    """
+    return await get_sms()
 
 
 @router.post("/", response_model=UserResponse)
