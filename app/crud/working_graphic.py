@@ -11,10 +11,15 @@ from ..schemas.working_graphic import WorkingGraphicCreate, WorkingGraphicUpdate
 
 async def create_day(db: AsyncSession, day: DayCreate, working_graphic_id: int):
     try:
+
         db_day = Day(**day.model_dump(), working_graphic_id=working_graphic_id)
-        db.add(db_day)
-        await db.commit()
-        await db.refresh(db_day)
+
+        if db_day.time_out is None and db_day.time_in is None:
+            return None
+        else:
+            db.add(db_day)
+            await db.commit()
+            await db.refresh(db_day)
 
     except Exception as e:
         await db.rollback()
@@ -51,23 +56,16 @@ async def update_day(db: AsyncSession, day_id: int, day: DayUpdate):
 
     if day.time_in is None and day.time_out is None:
         await db.delete(db_day)
-        return {"message": f"Day {day_id} deleted"}
-    else:
-        for key, value in day.model_dump(exclude_unset=True).items():
-            setattr(db_day, key, value)
-
         await db.commit()
-        await db.refresh(db_day)
-        return db_day
-    # return {
-    #     "id": db_day.id,
-    #     "day": db_day.day,
-    #     "time_in": db_day.time_in,
-    #     "time_out": db_day.time_out,
-    #     "is_work_day": db_day.is_work_day,
-    #     "created_at": db_day.created_at,
-    #     "updated_at": db_day.updated_at,
-    # }
+        return {"message": f"Day {day_id} deleted"}
+
+    update_data = day.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_day, key, value)
+
+    await db.commit()
+    await db.refresh(db_day)
+    return db_day
 
 
 async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10):
