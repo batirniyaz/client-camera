@@ -441,7 +441,7 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
         day_key = parse_datetime(attendance.time).strftime("%Y-%m-%d")
         daily_attendances[day_key].append(attendance)
 
-    response = {}
+    response = []
 
     for day, attendances in daily_attendances.items():
         first_attendances = {}
@@ -492,10 +492,13 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
                     late_commers += 1
                     break
 
-        response[day] = {
-            "on_time_commers": on_time_commers,
-            "late_commers": late_commers
-        }
+        response.append({
+            "day": {
+                "date": day,
+                "on_time_commers": on_time_commers,
+                "late_commers": late_commers,
+            }
+        })
 
     return {"success": True, "data": response}
 
