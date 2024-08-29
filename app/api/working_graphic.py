@@ -11,7 +11,7 @@ from app.database import get_db
 router = APIRouter()
 
 
-@router.post("/day", response_model=DayResponse)
+@router.post("/day", response_model=[])
 async def create_day_endpoint(day: DayCreate, working_graphic_id: int, db: AsyncSession = Depends(get_db)):
     return await create_day(db, day, working_graphic_id)
 
