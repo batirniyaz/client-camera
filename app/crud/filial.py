@@ -214,6 +214,6 @@ async def get_commers_filials(db: AsyncSession, date: str):
     formatted_filials = []
     for filial in filials:
         filial_commers = await get_commers_by_filial(db, date, filial.id)
-        formatted_filials.append({"filial_id": filial.id, "filial_name": filial.name, "data": filial_commers})
+        formatted_filials.append({"filial_id": filial.id, "filial_name": filial.name, "filial_address": filial.address, "total_emp": len(filial.employees), "data": filial_commers})
 
     return formatted_filials
