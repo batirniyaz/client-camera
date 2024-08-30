@@ -8,8 +8,7 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models import Filial
-from ..models import Attendance, Employee, WorkingGraphic, Day
+from ..models import Attendance, Employee, WorkingGraphic, Day, Filial
 from ..schemas.attendance import AttendanceDataResponse, AttendanceResponse, Image, AttendanceData
 from ..utils.file_utils import save_upload_file
 from ..database import BASE_URL
