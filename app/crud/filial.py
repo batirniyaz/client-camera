@@ -142,7 +142,7 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
                 formatted_date_employees.append(attendance)
 
     if not formatted_date_employees:
-        raise HTTPException(status_code=404, detail="No attendances found for the specified date")
+        return ["Not found"]
 
     formatted_employees = {employee.id: employee for employee in employees}
 
