@@ -65,13 +65,9 @@ async def store_daily_report(
             result = await db.execute(select(DailyReport)
                                       .where(cast(DailyReport.date, Date) == date.date())
                                       )
-            daily_report = result.all()
+            daily_report = result.scalar_one_or_none()
 
-            if len(daily_report) > 1:
-                logger.error(f"Multiple daily reports found for date: {date.date()}")
-                raise HTTPException(status_code=400, detail="Multiple daily reports found for date")
 
-            daily_report[0] if daily_report else None
 
             if not daily_report:
                 daily_report = DailyReport(
