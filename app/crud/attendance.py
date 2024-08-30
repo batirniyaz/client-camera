@@ -8,6 +8,7 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from models import Filial
 from ..models import Attendance, Employee, WorkingGraphic, Day
 from ..schemas.attendance import AttendanceDataResponse, AttendanceResponse, Image, AttendanceData
 from ..utils.file_utils import save_upload_file
@@ -411,6 +412,9 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
     result = await db.execute(select(Attendance))
     attendances = result.scalars().all()
 
+    res_fil = await db.execute(select(Filial).filter_by(id=filial_id))
+    filial = res_fil.scalar_one_or_none()
+
     filtered_attendances = [
         attendance for attendance in attendances
         if parse_datetime(attendance.time).strftime("%Y-%m") == date
@@ -480,7 +484,7 @@ async def get_daily_attendance(db: AsyncSession, date: str, filial_id: int):
             }
         })
 
-    return {"success": True, "data": response}
+    return {"success": True, "total_emp": len(filial.employees), "data": response}
 
 
 def parse_datetime(datetime_str):
