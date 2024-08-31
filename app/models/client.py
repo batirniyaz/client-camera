@@ -30,9 +30,11 @@ class DailyReport(Base):
     clients: Mapped[list[int]] = mapped_column(JSON, default=[])
     gender: Mapped[dict[str, int]] = mapped_column(JSON, default={"male": 0, "female": 0})
     age: Mapped[dict[str, int]] = mapped_column(JSON, default={})
-    time_slots: Mapped[dict[str, int]] = mapped_column(JSON, default={})
+    time_slots: Mapped[list] = mapped_column(JSON, default={})
     total_new_clients: Mapped[int] = mapped_column(default=0)
     total_regular_clients: Mapped[int] = mapped_column(default=0)
+    male_percentage: Mapped[float] = mapped_column(default=0.0)
+    female_percentage: Mapped[float] = mapped_column(default=0.0)
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     updated_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), onupdate=text("TIMEZONE('utc', now())"))
