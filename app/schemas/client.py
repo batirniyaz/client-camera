@@ -44,9 +44,11 @@ class DailyReportBase(BaseModel):
     clients: list[int] = Field([], description="A list of clients")
     gender: dict[str, int] = Field({}, description="A dictionary for gender distribution")
     age: dict[int, int] = Field({}, description="A dictionary for age distribution")
-    time_slots: dict[str, int] = Field({}, description="A dictionary for time slots")
+    time_slots: list = Field({}, description="A dictionary for time slots")
     total_new_clients: int = Field(..., description="The total number of new clients")
     total_regular_clients: int = Field(..., description="The total number of regular clients")
+    male_percentage: float = Field(..., description="The percentage of male clients")
+    female_percentage: float = Field(..., description="The percentage of female clients")
 
 
 class DailyReportCreate(DailyReportBase):
