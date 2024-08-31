@@ -64,13 +64,14 @@ async def store_daily_report(
     try:
         if date:
             result = await db.execute(select(DailyReport)
-                                      .where(cast(DailyReport.date, Date) == date.date())
-                                      )
-            daily_report = result.scalar_one_or_none()
+                                      .where(cast(DailyReport.date, Date) == date.date()))
+            daily_reports = result.scalars().all()
 
-            if daily_report:
-                await db.delete(daily_report)
+            if daily_reports:
+                for report in daily_reports:
+                    await db.delete(report)
                 await db.commit()
+                print(f"Deleted existing DailyReports for date {date.date()}.")
 
             daily_report = DailyReport(
                 date=str(date.date()),
