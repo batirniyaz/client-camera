@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -67,18 +68,21 @@ async def store_daily_report(
                                       )
             daily_report = result.scalar_one_or_none()
 
+            if daily_report:
+                await db.delete(daily_report)
+                await db.commit()
 
-
-            if not daily_report:
-                daily_report = DailyReport(
-                    date=str(date.date()),
-                    clients=[],
-                    gender={},
-                    age={},
-                    total_new_clients=0,
-                    total_regular_clients=0,
-                    time_slots={}
-                )
+            daily_report = DailyReport(
+                date=str(date.date()),
+                clients=[],
+                gender={},
+                age={},
+                total_new_clients=0,
+                total_regular_clients=0,
+                time_slots=[],
+                male_percentage=0.0,
+                female_percentage=0.0,
+            )
         else:
             daily_report = DailyReport(
                 date=str(start_datetime.date()),
@@ -87,7 +91,9 @@ async def store_daily_report(
                 age={},
                 total_new_clients=0,
                 total_regular_clients=0,
-                time_slots={}
+                time_slots=[],
+                male_percentage=0.0,
+                female_percentage=0.0,
             )
 
         query = select(Client)
@@ -111,6 +117,17 @@ async def store_daily_report(
         clients_result = await db.execute(query)
         clients = clients_result.scalars().all()
 
+        time_slot_data = defaultdict(lambda: {
+            "time": "",
+            "male_count": 0,
+            "female_count": 0,
+            "client_count": 0
+        })
+
+        total_clients = 0
+        total_males = 0
+        total_females = 0
+
         for client in clients:
             if client.id not in daily_report.clients:
                 if client.client_status == "new":
@@ -133,22 +150,41 @@ async def store_daily_report(
 
                 client_time = datetime.strptime(client.time, "%Y-%m-%d %H:%M:%S").time()
                 rounded_time_slot = round_time_slot(client_time)
-                if rounded_time_slot in daily_report.time_slots:
-                    daily_report.time_slots[rounded_time_slot] += 1
-                else:
-                    daily_report.time_slots[rounded_time_slot] = 1
 
-            flag_modified(daily_report, "clients")
-            flag_modified(daily_report, "gender")
-            flag_modified(daily_report, "age")
-            flag_modified(daily_report, "time_slots")
+                if client.gender.lower() == "male":
+                    total_males += 1
+                elif client.gender.lower() == "female":
+                    total_females += 1
 
-            print(f"After update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
+                if rounded_time_slot not in time_slot_data:
+                    time_slot_data[rounded_time_slot]["time"] = rounded_time_slot
+
+                time_slot_data[rounded_time_slot]["client_count"] += 1
+
+                if client.gender.lower() == "male":
+                    time_slot_data[rounded_time_slot]["male_count"] += 1
+                elif client.gender.lower() == "female":
+                    time_slot_data[rounded_time_slot]["female_count"] += 1
+
+            daily_report.time_slots = list(time_slot_data.values())
+            total_clients = total_males + total_females
+
+            if total_clients > 0:
+                daily_report.male_percentage = (total_males / total_clients) * 100
+                daily_report.female_percentage = (total_females / total_clients) * 100
+
+        flag_modified(daily_report, "clients")
+        flag_modified(daily_report, "gender")
+        flag_modified(daily_report, "age")
+        flag_modified(daily_report, "time_slots")
+
+        print(f"After update: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}")
 
         db.add(daily_report)
         await db.commit()
         await db.refresh(daily_report)
-        print(f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}, {daily_report.time_slots=}")
+        print(
+            f"After commit: {daily_report.gender=}, {daily_report.age=}, {daily_report.clients=}, {daily_report.time_slots=}")
 
         return DailyReportResponse.model_validate(daily_report).model_dump()
 
@@ -175,4 +211,3 @@ def round_time_slot(time):
         rounded_minute = 30
 
     return f"{rounded_hour:02}:{rounded_minute:02}"
-
