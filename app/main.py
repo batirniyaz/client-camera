@@ -3,11 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.auth.auth import auth_backend, current_user, fastapi_users
-from app.auth.db import User
-from app.database import engine, Base, SessionLocal, create_session
 from app.api import router
-from app.auth.schema import UserRead, UserCreate
+from app.database import create_session
 
 
 @asynccontextmanager
@@ -35,20 +32,4 @@ main_app.add_middleware(
 main_app.include_router(router)
 main_app.mount("/storage", StaticFiles(directory="app/storage"), name="storage")
 
-main_app.include_router(
-    fastapi_users.get_auth_router(auth_backend),
-    prefix="/auth/jwt",
-    tags=["auth"],
-)
-
-main_app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["auth"],
-)
-
-
-@main_app.get("/protected-route")
-def protected_route(user: User = Depends(current_user)):
-    return f"Hello, {user.email}"
 
