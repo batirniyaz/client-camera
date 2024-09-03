@@ -78,10 +78,14 @@ async def get_filial_employees_by_date_endpoint(
         date: str,
         db: AsyncSession = Depends(get_db),
         user: User = Depends(current_user),
+        skip: int = 0,
+        limit: int = 10,
 ):
 
     """
     Get a list of employees of a filial with the given ID by date.
+    :param limit:
+    :param skip:
     :param user:
     :param filial_id:
     :param date:
@@ -90,7 +94,7 @@ async def get_filial_employees_by_date_endpoint(
     """
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return await get_filial_employees_by_date(db, filial_id, date)
+    return await get_filial_employees_by_date(db, filial_id, date, skip, limit)
 
 
 @router.get("/commers/", response_model=[])
