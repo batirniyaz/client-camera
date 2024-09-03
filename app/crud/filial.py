@@ -144,6 +144,8 @@ async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: s
     if not formatted_date_employees:
         return ["Not found"]
 
+    formatted_date_employees.sort(key=lambda x: x.id)
+
     formatted_employees = {employee.id: employee for employee in employees}
 
     position_result = await db.execute(select(Position))
