@@ -125,8 +125,8 @@ async def get_filial(db: AsyncSession, filial_id: int):
     return formatted_filial
 
 
-async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: str):
-    result = await db.execute(select(Employee).filter_by(filial_id=filial_id))
+async def get_filial_employees_by_date(db: AsyncSession, filial_id: int, date: str, skip: int = 0, limit: int = 10):
+    result = await db.execute(select(Employee).filter_by(filial_id=filial_id).offset(skip).limit(limit))
     employees = result.scalars().all()
     if not employees:
         raise HTTPException(status_code=404, detail="Employees not found")
