@@ -12,7 +12,7 @@ SECRET = SECRET_AUTH
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
+    return JWTStrategy(secret=SECRET, lifetime_seconds=None)
 
 
 auth_backend = AuthenticationBackend(
