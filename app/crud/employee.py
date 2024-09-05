@@ -52,23 +52,19 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
                 days_result = await db.execute(select(Day).filter_by(working_graphic_id=working_graphic.id))
                 days = days_result.scalars().all()
 
-                working_graphic = WorkingGraphicResponse(
-                    id=working_graphic.id,
-                    name=working_graphic.name,
-                    days=[
-                        DayResponse(
-                            id=day.id,
-                            day=day.day,
-                            time_in=day.time_in,
-                            time_out=day.time_out,
-                            is_work_day=day.is_work_day,
-                            created_at=day.created_at,
-                            updated_at=day.updated_at,
-                        ) for day in days
+                working_graphic = {
+                    "id": working_graphic.id,
+                    "name": working_graphic.name,
+                    "days": [
+                        {
+                            "id": day.id,
+                            "day": day.day,
+                            "time_in": day.time_in,
+                            "time_out": day.time_out,
+                            "is_work_day": day.is_work_day,
+                        } for day in days
                     ],
-                    created_at=working_graphic.created_at,
-                    updated_at=working_graphic.updated_at,
-                )
+                }
 
         filial = await db.execute(select(Filial).filter_by(id=employee.filial_id))
         filial = filial.scalar_one_or_none()
@@ -76,39 +72,31 @@ async def get_employees(db: AsyncSession, skip: int = 0, limit: int = 10):
         images = await db.execute(select(EmployeeImage).filter_by(employee_id=employee.id))
         images = images.scalars().all()
 
-        formatted_employee = EmployeeResponse(
-            id=employee.id,
-            name=employee.name,
-            phone_number=employee.phone_number,
-            position_id=PositionResponse(
-                id=position.id,
-                name=position.name,
-                created_at=position.created_at,
-                updated_at=position.updated_at
-            ),
-            working_graphic=working_graphic,
-            filial_id=FilialResponse(
-                id=filial.id,
-                name=filial.name,
-                address=filial.address,
-                created_at=filial.created_at,
-                updated_at=filial.updated_at
-            ),
-            images=[
-                EmployeeImageResponse(
-                    image_id=image.image_id,
-                    employee_id=image.employee_id,
-                    image_url=f"{BASE_URL}{image.image_url}",
-                    created_at=image.created_at,
-                    updated_at=image.updated_at,
-                ) for image in images
+        formatted_employee = {
+            "id": employee.id,
+            "name": employee.name,
+            "phone_number": employee.phone_number,
+            "position": {
+                "id": position.id,
+                "name": position.name,
+            },
+            "working_graphic": working_graphic,
+            "filial": {
+                "id": filial.id,
+                "name": filial.name,
+                "address": filial.address,
+            },
+            "images": [
+                {
+                    "image_id": image.image_id,
+                    "employee_id": image.employee_id,
+                    "image_url": f"{BASE_URL}{image.image_url}",
+                } for image in images
             ],
-            created_at=employee.created_at,
-            updated_at=employee.updated_at
-        )
+        }
         formatted_employees.append(formatted_employee)
 
-    return [employee.model_dump() for employee in formatted_employees]
+    return formatted_employees
 
 
 async def get_employee(db: AsyncSession, employee_id: int):
@@ -129,23 +117,19 @@ async def get_employee(db: AsyncSession, employee_id: int):
             days_result = await db.execute(select(Day).filter_by(working_graphic_id=employee.working_graphic_id))
             days = days_result.scalars().all()
 
-            working_graphic = WorkingGraphicResponse(
-                id=working_graphic.id,
-                name=working_graphic.name,
-                days=[
-                    DayResponse(
-                        id=day.id,
-                        day=day.day,
-                        time_in=day.time_in,
-                        time_out=day.time_out,
-                        is_work_day=day.is_work_day,
-                        created_at=day.created_at,
-                        updated_at=day.updated_at,
-                    ) for day in days
+            working_graphic = {
+                "id": working_graphic.id,
+                "name": working_graphic.name,
+                "days": [
+                    {
+                        "id": day.id,
+                        "day": day.day,
+                        "time_in": day.time_in,
+                        "time_out": day.time_out,
+                        "is_work_day": day.is_work_day,
+                    } for day in days
                 ],
-                created_at=working_graphic.created_at,
-                updated_at=working_graphic.updated_at,
-            )
+            }
 
     filial = await db.execute(select(Filial).filter_by(id=employee.filial_id))
     filial = filial.scalar_one_or_none()
@@ -153,38 +137,30 @@ async def get_employee(db: AsyncSession, employee_id: int):
     images = await db.execute(select(EmployeeImage).filter_by(employee_id=employee.id))
     images = images.scalars().all()
 
-    formatted_employee = EmployeeResponse(
-        id=employee.id,
-        name=employee.name,
-        phone_number=employee.phone_number,
-        position_id=PositionResponse(
-            id=position.id,
-            name=position.name,
-            created_at=position.created_at,
-            updated_at=position.updated_at
-        ),
-        working_graphic=working_graphic,
-        filial_id=FilialResponse(
-            id=filial.id,
-            name=filial.name,
-            address=filial.address,
-            created_at=filial.created_at,
-            updated_at=filial.updated_at
-        ),
-        images=[
-            EmployeeImageResponse(
-                image_id=image.image_id,
-                employee_id=image.employee_id,
-                image_url=f"{BASE_URL}{image.image_url}",
-                created_at=image.created_at,
-                updated_at=image.updated_at,
-            ) for image in images
+    formatted_employee = {
+        "id": employee.id,
+        "name": employee.name,
+        "phone_number": employee.phone_number,
+        "position": {
+            "id": position.id,
+            "name": position.name,
+        },
+        "working_graphic": working_graphic,
+        "filial": {
+            "id": filial.id,
+            "name": filial.name,
+            "address": filial.address,
+        },
+        "images": [
+            {
+                "image_id": image.image_id,
+                "employee_id": image.employee_id,
+                "image_url": f"{BASE_URL}{image.image_url}",
+            } for image in images
         ],
-        created_at=employee.created_at,
-        updated_at=employee.updated_at
-    )
+    }
 
-    return formatted_employee.model_dump()
+    return formatted_employee
 
 
 async def update_employee(db: AsyncSession, employee_id: int, employee: EmployeeUpdate):
