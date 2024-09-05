@@ -28,7 +28,7 @@ class Employee(Base):
     working_graphic: Mapped[list["WorkingGraphic"]] = relationship(back_populates="employees",
                                                                    lazy="selectin")
 
-    filial_id: Mapped[int] = mapped_column(ForeignKey('filials.id'))
+    filial_id: Mapped[int] = mapped_column(ForeignKey('filials.id'), nullable=True)
     filial: Mapped[list["Filial"]] = relationship(back_populates="employees", lazy="selectin")
 
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
