@@ -1,8 +1,10 @@
 from fastapi import HTTPException
+from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..models import Employee
 from ..database import BASE_URL
 from ..models.working_graphic import WorkingGraphic, Day
 from ..schemas.working_graphic import WorkingGraphicCreate, WorkingGraphicUpdate, DayCreate, DayUpdate, \
@@ -96,9 +98,9 @@ async def get_working_graphics(db: AsyncSession, skip: int = 0, limit: int = 10)
                     "id": employee.id,
                     "name": employee.name,
                     "phone_number": employee.phone_number,
-                    "position": employee.position.name,
+                    "position": employee.position.name if employee.position else None,
                     "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
-                    "filial": employee.filial.name,
+                    "filial": employee.filial.name if employee.filial else None,
                     "images": [
                         {
                             "id": image.image_id,
@@ -189,6 +191,9 @@ async def delete_working_graphic(db: AsyncSession, working_graphic_id: int):
 
     if not db_working_graphic:
         raise HTTPException(status_code=404, detail="Working graphic not found")
+
+    await db.execute(update(Employee).filter_by(working_graphic_id=working_graphic_id).values(working_graphic_id=None))
+    await db.commit()
 
     for day in db_working_graphic.days:
         await db.delete(day)

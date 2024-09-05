@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -201,6 +202,9 @@ async def delete_filial(db: AsyncSession, filial_id: int):
 
     if not db_filial:
         raise HTTPException(status_code=404, detail="Filial not found")
+
+    await db.execute(update(Employee).filter_by(filial_id=filial_id).values(filial_id=None))
+    await db.commit()
 
     await db.delete(db_filial)
     await db.commit()
