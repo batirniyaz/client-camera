@@ -39,9 +39,9 @@ async def get_positions(db: AsyncSession, skip: int = 0, limit: int = 10):
                     "id": employee.id,
                     "name": employee.name,
                     "phone_number": employee.phone_number,
-                    "position": employee.position.name,
+                    "position": employee.position.name if employee.position else None,
                     "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
-                    "filial": employee.filial.name,
+                    "filial": employee.filial.name if employee.filial else None,
                     "images": [
                         {
                             "id": image.image_id,
@@ -77,9 +77,9 @@ async def get_position(db: AsyncSession, position_id: int):
                 "id": employee.id,
                 "name": employee.name,
                 "phone_number": employee.phone_number,
-                "position": employee.position.name,
+                "position": employee.position.name if employee.position else None,
                 "working_graphic": employee.working_graphic.name if employee.working_graphic else None,
-                "filial": employee.filial.name,
+                "filial": employee.filial.name if employee.filial else None,
                 "images": [
                     {
                         "id": image.image_id,
