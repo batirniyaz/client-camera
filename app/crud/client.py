@@ -57,7 +57,7 @@ async def create_client(db: AsyncSession, client: ClientCreate, background_tasks
 
 async def store_daily_report(
         db: AsyncSession,
-        date: Optional[datetime] = None,
+        date: Optional[str] = None,
         start_datetime: Optional[datetime] = None,
         end_datetime: Optional[datetime] = None
 ):
@@ -72,10 +72,10 @@ async def store_daily_report(
                 for report in daily_reports:
                     await db.delete(report)
                 await db.commit()
-                print(f"Deleted existing DailyReports for date {date.date()}.")
+                print(f"Deleted existing DailyReports for date {date_obj.date()}.")
 
             daily_report = DailyReport(
-                date=str(date.date()),
+                date=str(date_obj.date()),
                 clients=[],
                 gender={},
                 age={},
@@ -109,8 +109,8 @@ async def store_daily_report(
         elif end_datetime:
             query = query.filter(cast(Client.time, TIMESTAMP) <= end_datetime)
         elif date:
-            day_start = date.replace(hour=0, minute=0, second=0)
-            day_end = date.replace(hour=23, minute=59, second=59)
+            day_start = date_obj.replace(hour=0, minute=0, second=0)
+            day_end = date_obj.replace(hour=23, minute=59, second=59)
             query = query.filter(
                 cast(Client.time, TIMESTAMP) >= day_start,
                 cast(Client.time, TIMESTAMP) <= day_end
