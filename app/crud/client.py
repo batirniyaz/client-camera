@@ -163,13 +163,22 @@ async def get_daily_report(
             )
             daily_report = res.scalar_one_or_none()
 
-            delete_query = delete(DailyReport).filter(
-                DailyReport.date == date_str,
-                DailyReport.id != daily_report.id
-            )
-            await db.execute(delete_query)
-            await db.commit()
-            return DailyReportResponse.model_validate(daily_report)
+            if daily_report:
+                res_other = await db.execute(
+                    select(DailyReport)
+                    .filter_by(date=date_str)
+                )
+                other_reports = res_other.scalars().all()
+
+                ids_to_delete = [report.id for report in other_reports if report.id != daily_report.id]
+
+                if ids_to_delete:
+                    delete_query = delete(DailyReport).filter(DailyReport.id.in_(ids_to_delete))
+                    await db.execute(delete_query)
+                    await db.commit()
+                return DailyReportResponse.model_validate(daily_report)
+            else:
+                raise HTTPException(status_code=404, detail="No report found for the given date.")
 
         start_date_str = start_datetime.date().isoformat()
         end_date_str = end_datetime.date().isoformat()
@@ -190,15 +199,33 @@ async def get_daily_report(
         )
         db_end_date_report = res_end.scalar_one_or_none()
 
-        await db.execute(delete(DailyReport).filter(
-            DailyReport.date == start_date_str,
-            DailyReport.id != db_start_date_report.id
-        ))
+        if db_start_date_report:
+            res_other = await db.execute(
+                select(DailyReport)
+                .filter_by(date=start_date_str)
+            )
+            other_reports = res_other.scalars().all()
 
-        await db.execute(delete(DailyReport).filter(
-            DailyReport.date == end_date_str,
-            DailyReport.id != db_end_date_report.id
-        ))
+            ids_to_delete = [report.id for report in other_reports if report.id != db_start_date_report.id]
+
+            if ids_to_delete:
+                delete_query = delete(DailyReport).filter(DailyReport.id.in_(ids_to_delete))
+                await db.execute(delete_query)
+                await db.commit()
+
+        if db_end_date_report:
+            res_other = await db.execute(
+                select(DailyReport)
+                .filter_by(date=end_date_str)
+            )
+            other_reports = res_other.scalars().all()
+
+            ids_to_delete = [report.id for report in other_reports if report.id != db_end_date_report.id]
+
+            if ids_to_delete:
+                delete_query = delete(DailyReport).filter(DailyReport.id.in_(ids_to_delete))
+                await db.execute(delete_query)
+                await db.commit()
 
         query = select(DailyReport).filter(
             DailyReport.date.between(start_date_str, end_date_str)
