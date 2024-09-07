@@ -57,15 +57,16 @@ async def create_client(db: AsyncSession, client: ClientCreate, background_tasks
 
 async def store_daily_report(
         db: AsyncSession,
-        date: Optional[str] = None,
+        date: Optional[datetime] = None,
         start_datetime: Optional[datetime] = None,
         end_datetime: Optional[datetime] = None
 ):
     try:
         if date:
-            date_obj = datetime.strptime(date, "%Y-%m-%d")
+            date_str = str(date)
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             result = await db.execute(select(DailyReport)
-                                      .where(cast(DailyReport.date, Date) == date_obj.date()))
+                                      .where(cast(DailyReport.date, Date) == date.date()))
             daily_reports = result.scalars().all()
 
             if daily_reports:
@@ -75,7 +76,7 @@ async def store_daily_report(
                 print(f"Deleted existing DailyReports for date {date_obj.date()}.")
 
             daily_report = DailyReport(
-                date=str(date_obj.date()),
+                date=str(date.date()),
                 clients=[],
                 gender={},
                 age={},
@@ -109,8 +110,8 @@ async def store_daily_report(
         elif end_datetime:
             query = query.filter(cast(Client.time, TIMESTAMP) <= end_datetime)
         elif date:
-            day_start = date_obj.replace(hour=0, minute=0, second=0)
-            day_end = date_obj.replace(hour=23, minute=59, second=59)
+            day_start = date.replace(hour=0, minute=0, second=0)
+            day_end = date.replace(hour=23, minute=59, second=59)
             query = query.filter(
                 cast(Client.time, TIMESTAMP) >= day_start,
                 cast(Client.time, TIMESTAMP) <= day_end
