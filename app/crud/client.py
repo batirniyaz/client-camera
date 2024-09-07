@@ -63,8 +63,9 @@ async def store_daily_report(
 ):
     try:
         if date:
+            date_obj = datetime.strptime(date, "%Y-%m-%d")
             result = await db.execute(select(DailyReport)
-                                      .where(cast(DailyReport.date, Date) == date.date()))
+                                      .where(cast(DailyReport.date, Date) == date_obj.date()))
             daily_reports = result.scalars().all()
 
             if daily_reports:
