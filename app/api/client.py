@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.auth import current_user
 from app.auth.db import User
-from ..crud.client import create_client, store_daily_report
+from ..crud.client import create_client, get_daily_report
 from ..schemas import ClientCreate, ClientResponse
 from ..database import get_db
 
@@ -35,7 +35,7 @@ async def create_client_endpoint(
     return created_client
 
 
-@router.get("/reports", response_model=dict)
+@router.get("/reports", response_model=[])
 async def get_daily_report_endpoint(
         date: Optional[str] = Query(None, alias="date", description="YYYY-MM-DD format"),
         db: AsyncSession = Depends(get_db),
@@ -66,7 +66,7 @@ async def get_daily_report_endpoint(
             raise HTTPException(status_code=400,
                                 detail="You must provide either a date or both start_datetime and end_datetime.")
 
-        report = await store_daily_report(db, date_obj, start_datetime, end_datetime)
+        report = await get_daily_report(db=db, date=date_obj, start_datetime=start_datetime, end_datetime=end_datetime)
         return report
 
     except ValueError as e:
