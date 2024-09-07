@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Union
 
 from fastapi import HTTPException, BackgroundTasks
-from sqlalchemy import Date, cast, TIMESTAMP
+from sqlalchemy import Date, cast, TIMESTAMP, delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
@@ -155,12 +155,50 @@ async def get_daily_report(
     try:
         if date:
             date_str = date.strftime("%Y-%m-%d")
-            res = await db.execute(select(DailyReport).filter_by(date=date_str))
+            res = await db.execute(
+                select(DailyReport)
+                .filter_by(date=date_str)
+                .order_by(DailyReport.created_at.desc())
+                .limit(1)
+            )
             daily_report = res.scalar_one_or_none()
+
+            delete_query = delete(DailyReport).filter(
+                DailyReport.date == date_str,
+                DailyReport.id != daily_report.id
+            )
+            await db.execute(delete_query)
+            await db.commit()
             return DailyReportResponse.model_validate(daily_report)
 
         start_date_str = start_datetime.date().isoformat()
         end_date_str = end_datetime.date().isoformat()
+
+        res_start = await db.execute(
+            select(DailyReport)
+            .filter_by(date=start_date_str)
+            .order_by(DailyReport.created_at.desc())
+            .limit(1)
+        )
+        db_start_date_report = res_start.scalar_one_or_none()
+
+        res_end = await db.execute(
+            select(DailyReport)
+            .filter_by(date=end_date_str)
+            .order_by(DailyReport.created_at.desc())
+            .limit(1)
+        )
+        db_end_date_report = res_end.scalar_one_or_none()
+
+        await db.execute(delete(DailyReport).filter(
+            DailyReport.date == start_date_str,
+            DailyReport.id != db_start_date_report.id
+        ))
+
+        await db.execute(delete(DailyReport).filter(
+            DailyReport.date == end_date_str,
+            DailyReport.id != db_end_date_report.id
+        ))
 
         query = select(DailyReport).filter(
             DailyReport.date.between(start_date_str, end_date_str)
