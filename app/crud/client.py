@@ -240,6 +240,8 @@ async def get_daily_report(
         combined_gender_counts = defaultdict(int)
         combined_age_counts = defaultdict(int)
         combined_time_slots = defaultdict(lambda: {"male_count": 0, "female_count": 0, "client_count": 0})
+        total_new_clients = 0
+        total_regular_clients = 0
 
         for report in reports:
             report_date = datetime.strptime(report.date, "%Y-%m-%d")
@@ -258,6 +260,11 @@ async def get_daily_report(
                 else:
                     combined_clients.add(client.id)
 
+                if client.client_status == "new":
+                    total_new_clients += 1
+                else:
+                    total_regular_clients += 1
+
             for gender, count in report.gender.items():
                 combined_gender_counts[gender] += count
             for age, count in report.age.items():
@@ -268,13 +275,10 @@ async def get_daily_report(
                 combined_time_slots[rounded_time]["male_count"] += slot["male_count"]
                 combined_time_slots[rounded_time]["female_count"] += slot["female_count"]
 
-        total_new_clients = len(combined_clients)
-        total_regular_clients = len(combined_clients)
-
         male_count = combined_gender_counts["male"]
         female_count = combined_gender_counts["female"]
-        male_percentage = (male_count / total_new_clients) * 100 if total_new_clients > 0 else 0
-        female_percentage = (female_count / total_new_clients) * 100 if total_new_clients > 0 else 0
+        male_percentage = (male_count / len(combined_clients)) * 100 if total_new_clients > 0 else 0
+        female_percentage = (female_count / len(combined_clients)) * 100 if total_new_clients > 0 else 0
 
         response_data = {
             "start_date": start_datetime.strftime("%Y-%m-%d %H:%M"),
