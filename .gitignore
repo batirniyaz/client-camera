@@ -1,0 +1,5 @@
+.vercel
+venv
+.venv
+.env
+.app/storage/
